@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+/* ── Premium World Cup dark theme ──────────────────────────────────────────── */
+:root {
+  /* Backgrounds — deep navy */
+  --bg:       #060e2a;
+  --bg2:      #0a1628;
+
+  /* Cards — white / near-white (float on dark bg) */
+  --card:     #ffffff;
+  --card2:    #f0f6ff;
+  --card3:    #e8f1ff;
+
+  /* Borders */
+  --border:   rgba(255,255,255,0.1);
+  --border2:  rgba(255,255,255,0.2);
+
+  /* Accent palette */
+  --gold:     #f59e0b;
+  --gold2:    #fbbf24;
+  --cyan:     #0284c7;
+  --green:    #16a34a;
+  --red:      #dc2626;
+  --purple:   #7c3aed;
+  --orange:   #ea580c;
+
+  /* Text — dark (for inside white cards) */
+  --txt:      #0f172a;
+  --txt2:     #475569;
+  --txt3:     #94a3b8;
+
+  /* Aliases for @theme */
+  --background: var(--bg);
+  --foreground: #ffffff;
+  --primary:    var(--gold);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* { box-sizing: border-box; }
+
+html[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+html[dir="rtl"] body { text-align: right; }
+
+body {
+  /* Premium dark navy — stadium night atmosphere */
+  background: linear-gradient(160deg, #060e2a 0%, #0a1628 50%, #06101f 100%);
+  background-attachment: fixed;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "Helvetica Neue", sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,.04); }
+::-webkit-scrollbar-thumb { background: rgba(251,191,36,.35); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(251,191,36,.6); }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Cards ─────────────────────────────────────────────────────────────────── */
+.wc-card {
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.40), 0 1px 6px rgba(0,0,0,.25);
+}
+.wc-card-sm {
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.30), 0 1px 4px rgba(0,0,0,.18);
+}
+
+/* ── Stat bar ──────────────────────────────────────────────────────────────── */
+.stat-track {
+  background: rgba(255,255,255,.1);
+  border-radius: 999px;
+  overflow: hidden;
+  height: 6px;
+}
+.stat-fill-cyan   { background: linear-gradient(to right, #0284c7, #38bdf8); }
+.stat-fill-gold   { background: linear-gradient(to right, #d97706, #fbbf24); }
+.stat-fill-green  { background: linear-gradient(to right, #15803d, #4ade80); }
+.stat-fill-red    { background: linear-gradient(to right, #b91c1c, #f87171); }
+.stat-fill-purple { background: linear-gradient(to right, #6d28d9, #a78bfa); }
+.stat-fill-orange { background: linear-gradient(to right, #c2410c, #fb923c); }
+
+/* ── Qualification bar (left border) ──────────────────────────────────────── */
+.qual-1 { border-left: 3px solid #f59e0b; }
+.qual-2 { border-left: 3px solid #0284c7; }
+.qual-3 { border-left: 3px solid #f97316; }
+.qual-4 { border-left: 3px solid rgba(255,255,255,.1); opacity: .7; }
+
+/* ── Section label ────────────────────────────────────────────────────────── */
+/* Default: light text for dark body background */
+.sec-label {
+  font-size: .625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: rgba(255,255,255,0.45);
+}
+
+/* Inside white cards, restore dark color */
+.wc-card .sec-label,
+.wc-card-sm .sec-label {
+  color: #64748b;
+}
+
+/* ── Chip ─────────────────────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .75rem;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.6);
+  cursor: pointer;
+  transition: all .15s;
+  padding: 0 .6rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.chip:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 2px 8px rgba(245,158,11,.3);
+}
+.chip-active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(245,158,11,.45);
+}
+
+/* ── Page title underline ─────────────────────────────────────────────────── */
+.title-bar {
+  height: 3px;
+  width: 2rem;
+  border-radius: 999px;
+  background: linear-gradient(to right, #f59e0b, #f97316);
+  margin-top: 4px;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Score display ────────────────────────────────────────────────────────── */
+.score-pill {
+  background: #0f172a;
+  color: #fff;
+  border-radius: 8px;
+  padding: 2px 10px;
+  font-weight: 800;
+  font-size: .9rem;
+  letter-spacing: .05em;
+}
+
+/* ── Gradient hero banners ────────────────────────────────────────────────── */
+.hero-blue    { background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%); }
+.hero-green   { background: linear-gradient(135deg, #15803d 0%, #16a34a 100%); }
+.hero-purple  { background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%); }
+.hero-gold    { background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%); }
+.hero-wc      { background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 50%, #7c3aed 100%); }
+
+/* ── Page section header — dark navy (matches AppHeader) ──────────────────── */
+.page-section-header {
+  background: linear-gradient(160deg, #060e2a 0%, #0d1b3e 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ── Tab switcher pill ─────────────────────────────────────────────────────── */
+.tab-switcher {
+  display: flex;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  padding: 3px;
+  gap: 3px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 13px;
+  color: rgba(255,255,255,.45);
+  transition: all 0.15s;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+.tab-btn-active {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(245,158,11,.4);
+}
