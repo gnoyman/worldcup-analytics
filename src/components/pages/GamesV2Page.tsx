@@ -226,8 +226,8 @@ function MatchCard({ m, findTeam }: { m: Match; findTeam: (id: string) => Team |
 
       {/* Footer meta */}
       <div style={{
-        display: "flex", alignItems: "center",
-        justifyContent: "space-between",
+        display: "flex", alignItems: "center", flexWrap: "wrap",
+        justifyContent: "space-between", gap: "6px",
         padding: "10px 16px 14px",
         borderTop: "1px solid rgba(255,255,255,.05)",
       }}>
@@ -241,6 +241,20 @@ function MatchCard({ m, findTeam }: { m: Match; findTeam: (id: string) => Team |
         }}>
           Group {m.groupId}
         </span>
+
+        {/* Venue */}
+        {m.venue && (
+          <span style={{
+            fontSize: "10px", fontWeight: 600,
+            color: "rgba(255,255,255,.35)",
+            display: "flex", alignItems: "center", gap: "4px",
+            flex: 1, minWidth: 0, overflow: "hidden",
+            textOverflow: "ellipsis", whiteSpace: "nowrap",
+            justifyContent: "center",
+          }}>
+            📍 {m.venue}
+          </span>
+        )}
 
         {/* Status */}
         <span style={{
@@ -309,9 +323,12 @@ function FixtureRow({
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: "8px",
-      padding: "13px 16px",
+      padding: "0",
       borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,.04)",
+    }}>
+    <div style={{
+      display: "flex", alignItems: "center", gap: "8px",
+      padding: "13px 16px 6px",
     }}>
       {/* Kick-off time */}
       <span style={{
@@ -370,6 +387,22 @@ function FixtureRow({
       }}>
         G{m.groupId}
       </span>
+    </div>
+    {/* Venue sub-row */}
+    {m.venue && (
+      <div style={{
+        padding: "0 16px 9px",
+        display: "flex", alignItems: "center", gap: "4px",
+      }}>
+        <span style={{ fontSize: "9px", color: "rgba(255,255,255,.25)" }}>📍</span>
+        <span style={{
+          fontSize: "9px", color: "rgba(255,255,255,.25)",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {m.venue}
+        </span>
+      </div>
+    )}
     </div>
   );
 }
@@ -453,7 +486,7 @@ function ResultRow({
         </span>
       </div>
 
-      {/* Group + date */}
+      {/* Group + date + venue */}
       <div style={{
         display: "flex", flexDirection: "column",
         alignItems: "flex-end", flexShrink: 0, gap: "2px",
@@ -465,6 +498,16 @@ function ResultRow({
         }}>
           {m.date.slice(5).replace("-", "/")}
         </span>
+        {m.venue && (
+          <span style={{
+            fontSize: "8px", color: "rgba(255,255,255,.18)",
+            maxWidth: "80px", overflow: "hidden",
+            textOverflow: "ellipsis", whiteSpace: "nowrap",
+            textAlign: "right",
+          }}>
+            {m.venue}
+          </span>
+        )}
       </div>
     </div>
   );

@@ -15,7 +15,7 @@
  */
 
 import { type NextRequest } from "next/server";
-import { getProvider, getCached, setCached, AUTH_TTL, getProviderName, OF_SOURCE_URL, getLastFetchAt } from "@/services/football";
+import { getProvider, getCached, setCached, AUTH_TTL, getProviderName, OF_SOURCE_URL, getLastFetchAt, getCachedOpenFootballStats } from "@/services/football";
 import {
   API_ID_MAPPING_SIZE,
   EFFECTIVE_SEASON,
@@ -142,7 +142,7 @@ async function probeCountries(): Promise<AuthProbeResult> {
 
 export async function GET(request: NextRequest) {
   const test = request.nextUrl.searchParams.get("test");
-  const isMock = process.env.USE_MOCK_DATA !== "false";
+  const isMock = getProviderName() === "MockProvider";
   const rawKey = process.env.API_FOOTBALL_KEY ?? "";
   const hasApiKey = !isMock && rawKey.trim().length > 0;
   const quota = getQuota();
@@ -167,10 +167,12 @@ export async function GET(request: NextRequest) {
           allowManualRefresh: process.env.API_ALLOW_MANUAL_REFRESH !== "false",
           // OpenFootball-specific
           openFootball: process.env.FOOTBALL_DATA_PROVIDER === "openfootball" ? {
-            sourceUrl:      OF_SOURCE_URL,
-            lastFetchAt:    getLastFetchAt(),
-            supportsLive:   false,
-            supportsStats:  false,
+            sourceUrl:     OF_SOURCE_URL,
+            lastFetchAt:   getLastFetchAt(),
+            supportsLive:  false,
+            supportsStats: false,
+            // Stats populated from in-memory cache (no HTTP call)
+            stats: getCachedOpenFootballStats(),
           } : null,
         },
         quota,

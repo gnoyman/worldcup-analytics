@@ -19,7 +19,14 @@ import type { FootballProvider } from "./provider";
 export type { FootballProvider };
 export { MockProvider } from "./mockProvider";
 export { ApiFootballProvider } from "./apiFootballProvider";
-export { OpenFootballProvider, OF_SOURCE_URL, getLastFetchAt } from "./openFootballProvider";
+export {
+  OpenFootballProvider,
+  OF_SOURCE_URL,
+  getLastFetchAt,
+  getCachedOpenFootballStats,
+  convertOpenFootballTimeToIsraelTime,
+  type OpenFootballStats,
+} from "./openFootballProvider";
 export { getCached, setCached, clearCache, clearCacheKey, LIVE_TTL, DEFAULT_TTL, AUTH_TTL } from "./cache";
 export {
   PlanRestrictionError,

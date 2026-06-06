@@ -36,6 +36,13 @@ interface ConfigData {
     lastFetchAt:   number | null;
     supportsLive:  boolean;
     supportsStats: boolean;
+    stats: {
+      matchesCount: number;
+      groupsCount:  number;
+      teamsCount:   number;
+      venuesCount:  number;
+      scoresCount:  number;
+    } | null;
   } | null;
 }
 
@@ -282,7 +289,8 @@ export function DiagnosticsPage() {
   const testTopScorers = () => runTest("topscorers", "topScorers", setTopScorers as React.Dispatch<React.SetStateAction<TestState<TopScorersData>>>);
   const testLive       = () => runTest("live",       "liveMatches",setLive as React.Dispatch<React.SetStateAction<TestState<LiveData>>>);
 
-  const isLive = config && !config.isMock;
+  const isLive          = config && !config.isMock;
+  const isOpenFootball  = config?.footballDataProvider === "openfootball";
 
   return (
     <div className="pb-[80px]">
@@ -429,9 +437,52 @@ export function DiagnosticsPage() {
                 {config.openFootball && (
                   <>
                     <Row label="Source URL" value={config.openFootball.sourceUrl} mono sub="OpenFootball WC 2026 public dataset" />
-                    <Row label="Last fetch" value={config.openFootball.lastFetchAt ? new Date(config.openFootball.lastFetchAt).toLocaleTimeString("he-IL") : "Not yet"} ok={config.openFootball.lastFetchAt !== null} />
+                    <Row
+                      label="Last fetch"
+                      value={config.openFootball.lastFetchAt
+                        ? new Date(config.openFootball.lastFetchAt).toLocaleTimeString("he-IL")
+                        : "Not yet"}
+                      ok={config.openFootball.lastFetchAt !== null}
+                      sub="Time of last successful fetch from GitHub"
+                    />
                     <Row label="Live data" value="Not available" ok={false} sub="OpenFootball is a static dataset — no real-time scores" />
                     <Row label="Player stats" value="Not available" ok={false} sub="No top scorer or player stat data in this source" />
+                    {config.openFootball.stats ? (
+                      <>
+                        <Row
+                          label="Matches in source"
+                          value={String(config.openFootball.stats.matchesCount)}
+                          ok={config.openFootball.stats.matchesCount > 0}
+                          sub="Group stage + knockout rounds"
+                        />
+                        <Row
+                          label="Groups"
+                          value={String(config.openFootball.stats.groupsCount)}
+                          ok={config.openFootball.stats.groupsCount === 12}
+                          sub={config.openFootball.stats.groupsCount === 12 ? "All 12 groups present" : "Expected 12"}
+                        />
+                        <Row
+                          label="Teams"
+                          value={String(config.openFootball.stats.teamsCount)}
+                          ok={config.openFootball.stats.teamsCount === 48}
+                          sub={config.openFootball.stats.teamsCount === 48 ? "Full 48-team roster" : "Expected 48"}
+                        />
+                        <Row
+                          label="Venues"
+                          value={String(config.openFootball.stats.venuesCount)}
+                          ok={config.openFootball.stats.venuesCount > 0}
+                          sub="Host cities with at least one match"
+                        />
+                        <Row
+                          label="Matches with scores"
+                          value={String(config.openFootball.stats.scoresCount)}
+                          ok={true}
+                          sub={config.openFootball.stats.scoresCount === 0 ? "Tournament not yet started" : "Results available"}
+                        />
+                      </>
+                    ) : (
+                      <Row label="Dataset stats" value="Not yet cached" ok={false} sub="Make a data request to populate" />
+                    )}
                   </>
                 )}
 
@@ -459,8 +510,8 @@ export function DiagnosticsPage() {
           </div>
         )}
 
-        {/* ── Auth test ─────────────────────────────────────────────────── */}
-        {isLive && (
+        {/* ── Auth test (api-football only) ────────────────────────────── */}
+        {isLive && !isOpenFootball && (
           <div
             className="mx-4 rounded-2xl overflow-hidden mb-4"
             style={{ border: "1px solid #e8eef8", boxShadow: "0 2px 12px rgba(14,30,64,.07)" }}
@@ -492,7 +543,7 @@ export function DiagnosticsPage() {
         )}
 
         {/* ── Fixtures test ─────────────────────────────────────────────── */}
-        {isLive && (
+        {(isLive || isOpenFootball) && (
           <div
             className="mx-4 rounded-2xl overflow-hidden mb-4"
             style={{ border: "1px solid #e8eef8", boxShadow: "0 2px 12px rgba(14,30,64,.07)" }}
@@ -537,7 +588,7 @@ export function DiagnosticsPage() {
         )}
 
         {/* ── Standings test ────────────────────────────────────────────── */}
-        {isLive && (
+        {(isLive || isOpenFootball) && (
           <div
             className="mx-4 rounded-2xl overflow-hidden mb-4"
             style={{ border: "1px solid #e8eef8", boxShadow: "0 2px 12px rgba(14,30,64,.07)" }}
@@ -571,8 +622,8 @@ export function DiagnosticsPage() {
           </div>
         )}
 
-        {/* ── Top Scorers test ──────────────────────────────────────────── */}
-        {isLive && (
+        {/* ── Top Scorers test (api-football only) ─────────────────────── */}
+        {isLive && !isOpenFootball && (
           <div
             className="mx-4 rounded-2xl overflow-hidden mb-4"
             style={{ border: "1px solid #e8eef8", boxShadow: "0 2px 12px rgba(14,30,64,.07)" }}
@@ -601,8 +652,8 @@ export function DiagnosticsPage() {
           </div>
         )}
 
-        {/* ── Live test ─────────────────────────────────────────────────── */}
-        {isLive && (
+        {/* ── Live test (api-football only) ────────────────────────────── */}
+        {isLive && !isOpenFootball && (
           <div
             className="mx-4 rounded-2xl overflow-hidden mb-4"
             style={{ border: "1px solid #e8eef8", boxShadow: "0 2px 12px rgba(14,30,64,.07)" }}

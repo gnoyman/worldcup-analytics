@@ -185,9 +185,9 @@ function TodayMatchSubCard({ m, findTeam }: { m: Match; findTeam: (id: string) =
         </div>
       </div>
 
-      {/* Status + group badges */}
+      {/* Status + group + venue badges */}
       <div style={{
-        display: "flex", alignItems: "center",
+        display: "flex", alignItems: "center", flexWrap: "wrap",
         justifyContent: "center", gap: "6px",
         marginTop: "8px",
       }}>
@@ -198,6 +198,15 @@ function TodayMatchSubCard({ m, findTeam }: { m: Match; findTeam: (id: string) =
         }}>
           בית {m.groupId}
         </span>
+        {m.venue && (
+          <span style={{
+            fontSize: "10px", fontWeight: 600,
+            color: "#94a3b8",
+            display: "flex", alignItems: "center", gap: "3px",
+          }}>
+            📍 {m.venue}
+          </span>
+        )}
         <span style={{
           fontSize: "10px", fontWeight: 700,
           padding: "2px 9px", borderRadius: "999px",
@@ -211,7 +220,7 @@ function TodayMatchSubCard({ m, findTeam }: { m: Match; findTeam: (id: string) =
             background: done ? "#16a34a" : "#0284c7",
             flexShrink: 0,
           }} />
-          {done ? "הסתיים" : (m.time ? m.time : "עתידי")}
+          {done ? "הסתיים" : (m.time ? `${m.time} ⏰` : "עתידי")}
         </span>
       </div>
     </div>
@@ -410,11 +419,22 @@ function UpcomingRow({ m, findTeam }: { m: Match; findTeam: (id: string) => Team
         </div>
       </div>
 
-      {/* Group badge */}
-      <div style={{ marginTop: "4px", display: "flex", gap: "5px", alignItems: "center" }}>
-        <span style={{
-          fontSize: "9px", fontWeight: 600, color: "#94a3b8",
-        }}>בית {m.groupId}</span>
+      {/* Group + venue */}
+      <div style={{ marginTop: "4px", display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontSize: "9px", fontWeight: 600, color: "#94a3b8" }}>
+          בית {m.groupId}
+        </span>
+        {m.venue && (
+          <>
+            <span style={{ fontSize: "9px", color: "#cbd5e1" }}>•</span>
+            <span style={{
+              fontSize: "9px", color: "#94a3b8",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "140px",
+            }}>
+              {m.venue}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -503,13 +523,21 @@ function ResultRow({ m, findTeam }: { m: Match; findTeam: (id: string) => Team |
         </span>
       </div>
 
-      {/* Date */}
-      <span style={{
-        fontSize: "9px", color: "#94a3b8", fontWeight: 600,
-        flexShrink: 0, whiteSpace: "nowrap",
-      }}>
-        {isoToSlash(m.date)}
-      </span>
+      {/* Date + venue */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px", flexShrink: 0 }}>
+        <span style={{ fontSize: "9px", color: "#94a3b8", fontWeight: 600, whiteSpace: "nowrap" }}>
+          {isoToSlash(m.date)}
+        </span>
+        {m.venue && (
+          <span style={{
+            fontSize: "8px", color: "#cbd5e1",
+            whiteSpace: "nowrap", maxWidth: "90px",
+            overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            {m.venue}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

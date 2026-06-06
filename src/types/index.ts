@@ -28,6 +28,8 @@ export interface Match {
   date: string;
   /** Kickoff time in HH:mm format (24h), provider-dependent. */
   time?: string;
+  /** Venue / stadium name, when provided by the data source. */
+  venue?: string;
 }
 
 // ─── Group Stage ──────────────────────────────────────────────────────────────

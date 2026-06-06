@@ -20,6 +20,34 @@ import type { PlayerStat } from "@/data/mockStats";
 import { getCached, setCached, DEFAULT_TTL } from "./cache";
 import { calculateAllGroupStandings } from "@/engine/standings/standings";
 
+// ── Time conversion ────────────────────────────────────────────────────────────
+
+/**
+ * Converts an OpenFootball kickoff time (format: "HH:MM UTC±X") to Israel
+ * Standard Time (UTC+3). Returns "HH:MM" with no suffix.
+ *
+ * Example: "13:00 UTC-6"  → "22:00"
+ *          "20:00 UTC-5"  → "04:00"  (crosses midnight)
+ *
+ * Falls back to returning the raw HH:MM part when the format is unrecognised.
+ */
+export function convertOpenFootballTimeToIsraelTime(
+  _date: string,
+  time: string,
+): string {
+  const m = time.match(/^(\d{1,2}):(\d{2})\s+UTC([+-]\d+)$/);
+  if (!m) return time.split(" ")[0] ?? time;
+
+  const h      = parseInt(m[1], 10);
+  const min    = m[2];
+  const offset = parseInt(m[3], 10); // e.g. -6 for UTC-6
+
+  // local → UTC: subtract offset (UTC-6 means add 6)
+  // UTC → Israel: add 3
+  const ilHour = (((h - offset + 3) % 24) + 24) % 24;
+  return `${String(ilHour).padStart(2, "0")}:${min}`;
+}
+
 // ── Source ────────────────────────────────────────────────────────────────────
 
 export const OF_SOURCE_URL =
@@ -232,12 +260,45 @@ function buildGroupsAndFixtures(raw: OFData): { groups: Group[]; matches: Match[
         status,
         matchDay,
         date: m.date,
-        time: m.time,
+        time: m.time ? convertOpenFootballTimeToIsraelTime(m.date, m.time) : undefined,
+        venue: m.ground,
       });
     }
   }
 
   return { groups, matches };
+}
+
+// ── Cached stats (diagnostic use; never triggers an HTTP fetch) ───────────────
+
+export interface OpenFootballStats {
+  matchesCount: number;
+  groupsCount:  number;
+  teamsCount:   number;
+  venuesCount:  number;
+  scoresCount:  number;
+}
+
+/**
+ * Returns dataset statistics computed purely from the server-side cache.
+ * Returns null when the raw JSON has not been fetched yet in this process.
+ * Safe to call from the config diagnostics endpoint (makes zero HTTP requests).
+ */
+export function getCachedOpenFootballStats(): OpenFootballStats | null {
+  const cached = getCached<OFData>(RAW_CACHE_KEY);
+  if (!cached) return null;
+
+  const { groups } = buildGroupsAndFixtures(cached);
+  const venues    = new Set(cached.matches.filter(m => m.ground).map(m => m.ground!));
+  const teamIds   = new Set(groups.flatMap(g => g.teams.map(t => t.id)));
+
+  return {
+    matchesCount: cached.matches.length,
+    groupsCount:  groups.length,
+    teamsCount:   teamIds.size,
+    venuesCount:  venues.size,
+    scoresCount:  cached.matches.filter(m => m.score).length,
+  };
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────

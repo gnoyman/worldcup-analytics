@@ -151,9 +151,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setApiStandings(standingsJson.data);
         }
 
-        // If groups came from OpenFootball, mark source accordingly
+        // Mark data source: openfootball when groups came from that provider,
+        // error when all three calls failed (no data loaded at all), live otherwise.
         const providerIsOpenFootball = groupsJson.ok && Array.isArray(groupsJson.data) && groupsJson.data.length > 0;
-        setDataSource(providerIsOpenFootball ? "openfootball" : "live");
+        const allFailed = !groupsJson.ok && !fixturesJson.ok && !standingsJson.ok;
+        setDataSource(providerIsOpenFootball ? "openfootball" : allFailed ? "error" : "live");
         setLastSyncAt(Date.now());
       } catch (err) {
         console.error("[AppContext] API data load failed:", err);
