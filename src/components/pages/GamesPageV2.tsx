@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "@/components/AppContext";
 import type { DataSource } from "@/components/AppContext";
 import type { GroupStanding, Match, Team, TournamentState } from "@/types";
@@ -515,11 +515,27 @@ function ResultRow({ m, findTeam }: { m: Match; findTeam: (id: string) => Team |
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Mobile breakpoint hook
+// ─────────────────────────────────────────────────────────────────────────────
+
+function useIsMobile(bp = 768) {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < bp);
+    fn();
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, [bp]);
+  return mobile;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GamesPageV2 — main component
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function GamesPageV2() {
   const { tournament, dataSource, teamsById, lastSyncAt, apiStandings } = useApp();
+  const isMobile = useIsMobile();
 
   /* ── Data derivation (same logic as before, no changes) ── */
   const allTeams    = tournament.groups.flatMap(g => g.teams);
@@ -555,7 +571,7 @@ export function GamesPageV2() {
 
   /* ── Render ── */
   return (
-    <div style={{ background: "#f4f6fb", minHeight: "100vh", paddingBottom: "100px" }}>
+    <div style={{ background: "#f4f6fb", minHeight: "100vh", paddingBottom: "100px", overflowX: "hidden" }}>
 
       {/* ── Page title bar ──────────────────────────────────────────────── */}
       <div style={{ background: "#fff", borderBottom: "1px solid #edf2f7", padding: "16px 16px 14px" }}>
@@ -586,7 +602,7 @@ export function GamesPageV2() {
       <div style={{ padding: "18px 16px 0", display: "flex", flexDirection: "column", gap: "18px" }}>
 
         {/* ── 3 stat cards ────────────────────────────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: "12px" }}>
           <StatCard
             icon="📅" label="משחקים שהסתיימו"
             value={String(played)} sub={`מתוך ${total}`}
@@ -605,7 +621,11 @@ export function GamesPageV2() {
         </div>
 
         {/* ── 2-col: Featured group (DOM-1 = visual right) + Today (DOM-2 = visual left) ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: "14px" }}>
+        {/* On mobile: column-reverse so Today (DOM-2) appears on top, Group Table below */}
+        <div style={isMobile
+          ? { display: "flex", flexDirection: "column-reverse", gap: "14px" }
+          : { display: "grid", gridTemplateColumns: "2fr 3fr", gap: "14px" }
+        }>
 
           {/* Featured group table */}
           <FeaturedGroup tournament={tournament} apiStandings={apiStandings} />
@@ -683,7 +703,7 @@ export function GamesPageV2() {
                 const d1 = allDates[i * 2];
                 const d2 = allDates[i * 2 + 1];
                 return (
-                  <div key={d1} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div key={d1} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
                     {/* DOM first = visual right in RTL */}
                     {d1 && (
                       <DateColumn
