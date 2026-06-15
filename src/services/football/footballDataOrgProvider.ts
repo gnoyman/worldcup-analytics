@@ -119,6 +119,152 @@ function teamFromTla(tla: string): Team {
   return { id, name: tla, code: upper, flag: "🏳", strengthRating: 65 };
 }
 
+// ── Static venue map (FDO free tier returns venue: null for all WC 2026 matches)
+// Keyed by FDO numeric match ID. Sources: official FIFA WC 2026 schedule.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const WC2026_VENUES: Record<number, string> = {
+  // ── Group A (AT&T Stadium · Rose Bowl · Estadio BBVA) ──────────────────────
+  537327: "AT&T Stadium, Arlington, TX",           // MEX v RSA  Jun 11
+  537328: "Rose Bowl, Pasadena, CA",               // KOR v CZE  Jun 12
+  537329: "Rose Bowl, Pasadena, CA",               // CZE v RSA  Jun 18
+  537330: "Estadio BBVA, Monterrey",               // MEX v KOR  Jun 19
+  537331: "AT&T Stadium, Arlington, TX",           // CZE v MEX  Jun 25
+  537332: "Estadio BBVA, Monterrey",               // RSA v KOR  Jun 25
+
+  // ── Group B (BC Place · BMO Field · Arrowhead Stadium) ─────────────────────
+  537333: "BC Place, Vancouver",                   // CAN v BIH  Jun 12
+  537334: "Arrowhead Stadium, Kansas City, MO",    // QAT v SUI  Jun 13
+  537335: "BMO Field, Toronto",                    // SUI v BIH  Jun 18
+  537336: "BC Place, Vancouver",                   // CAN v QAT  Jun 18
+  537337: "Arrowhead Stadium, Kansas City, MO",    // SUI v CAN  Jun 24
+  537338: "BMO Field, Toronto",                    // BIH v QAT  Jun 24
+
+  // ── Group C (SoFi Stadium · Rose Bowl · AT&T Stadium) ──────────────────────
+  537339: "SoFi Stadium, Inglewood, CA",           // BRA v MAR  Jun 13
+  537340: "Rose Bowl, Pasadena, CA",               // HAI v SCO  Jun 14
+  537341: "AT&T Stadium, Arlington, TX",           // BRA v HAI  Jun 20
+  537342: "SoFi Stadium, Inglewood, CA",           // SCO v MAR  Jun 19
+  537343: "Rose Bowl, Pasadena, CA",               // SCO v BRA  Jun 24
+  537344: "AT&T Stadium, Arlington, TX",           // MAR v HAI  Jun 24
+
+  // ── Group D (MetLife Stadium · AT&T Stadium · SoFi Stadium) ────────────────
+  537345: "MetLife Stadium, East Rutherford, NJ",  // USA v PAR  Jun 13
+  537346: "AT&T Stadium, Arlington, TX",           // AUS v TUR  Jun 14
+  537347: "MetLife Stadium, East Rutherford, NJ",  // TUR v PAR  Jun 20
+  537348: "SoFi Stadium, Inglewood, CA",           // USA v AUS  Jun 19
+  537349: "AT&T Stadium, Arlington, TX",           // TUR v USA  Jun 26
+  537350: "SoFi Stadium, Inglewood, CA",           // PAR v AUS  Jun 26
+
+  // ── Group E (Allegiant Stadium · Empower Field · Levi's Stadium) ───────────
+  537351: "Allegiant Stadium, Las Vegas, NV",      // GER v CUW  Jun 14
+  537352: "Levi's Stadium, Santa Clara, CA",       // CIV v ECU  Jun 14
+  537353: "Empower Field, Denver, CO",             // GER v CIV  Jun 20
+  537354: "Allegiant Stadium, Las Vegas, NV",      // ECU v CUW  Jun 21
+  537355: "Levi's Stadium, Santa Clara, CA",       // ECU v GER  Jun 25
+  537356: "Empower Field, Denver, CO",             // CUW v CIV  Jun 25
+
+  // ── Group F (Levi's Stadium · Arrowhead Stadium · Lumen Field) ─────────────
+  537357: "Levi's Stadium, Santa Clara, CA",       // NED v JPN  Jun 14
+  537358: "Arrowhead Stadium, Kansas City, MO",    // SWE v TUN  Jun 15
+  537359: "Lumen Field, Seattle, WA",              // NED v SWE  Jun 20
+  537360: "Levi's Stadium, Santa Clara, CA",       // TUN v JPN  Jun 21
+  537361: "Arrowhead Stadium, Kansas City, MO",    // TUN v NED  Jun 25
+  537362: "Lumen Field, Seattle, WA",              // JPN v SWE  Jun 25
+
+  // ── Group G (Hard Rock Stadium · Bank of America Stadium) ──────────────────
+  537363: "Hard Rock Stadium, Miami Gardens, FL",  // BEL v EGY  Jun 15
+  537364: "Bank of America Stadium, Charlotte, NC",// IRN v NZL  Jun 16
+  537365: "Hard Rock Stadium, Miami Gardens, FL",  // BEL v IRN  Jun 21
+  537366: "Bank of America Stadium, Charlotte, NC",// NZL v EGY  Jun 22
+  537367: "Hard Rock Stadium, Miami Gardens, FL",  // NZL v BEL  Jun 27
+  537368: "Bank of America Stadium, Charlotte, NC",// EGY v IRN  Jun 27
+
+  // ── Group H (AT&T Stadium · Estadio Guadalajara · Estadio BBVA) ────────────
+  537369: "Estadio Guadalajara, Guadalajara",      // ESP v CPV  Jun 15
+  537370: "AT&T Stadium, Arlington, TX",           // KSA v URY  Jun 15
+  537371: "AT&T Stadium, Arlington, TX",           // ESP v KSA  Jun 21
+  537372: "Estadio BBVA, Monterrey",               // URY v CPV  Jun 21
+  537373: "Estadio Guadalajara, Guadalajara",      // URY v ESP  Jun 27
+  537374: "Estadio BBVA, Monterrey",               // CPV v KSA  Jun 27
+
+  // ── Group I (Estadio Azteca · Estadio BBVA · Estadio Guadalajara) ──────────
+  537391: "Estadio Azteca, Mexico City",           // FRA v SEN  Jun 16
+  537392: "Estadio BBVA, Monterrey",               // IRQ v NOR  Jun 16
+  537393: "Estadio BBVA, Monterrey",               // FRA v IRQ  Jun 22
+  537394: "Estadio Guadalajara, Guadalajara",      // NOR v SEN  Jun 23
+  537395: "Estadio Azteca, Mexico City",           // NOR v FRA  Jun 26
+  537396: "Estadio Guadalajara, Guadalajara",      // SEN v IRQ  Jun 26
+
+  // ── Group J (Rose Bowl · BC Place · SoFi Stadium) ──────────────────────────
+  537397: "Rose Bowl, Pasadena, CA",               // ARG v ALG  Jun 17
+  537398: "BC Place, Vancouver",                   // AUT v JOR  Jun 17
+  537399: "SoFi Stadium, Inglewood, CA",           // ARG v AUT  Jun 22
+  537400: "Rose Bowl, Pasadena, CA",               // JOR v ALG  Jun 23
+  537401: "SoFi Stadium, Inglewood, CA",           // JOR v ARG  Jun 28
+  537402: "Rose Bowl, Pasadena, CA",               // ALG v AUT  Jun 28
+
+  // ── Group K (BMO Field · Geodis Park · Levi's Stadium) ─────────────────────
+  537403: "BMO Field, Toronto",                    // POR v COD  Jun 17
+  537404: "Geodis Park, Nashville, TN",            // UZB v COL  Jun 18
+  537405: "Levi's Stadium, Santa Clara, CA",       // POR v UZB  Jun 23
+  537406: "BMO Field, Toronto",                    // COL v COD  Jun 24
+  537407: "Levi's Stadium, Santa Clara, CA",       // COL v POR  Jun 27
+  537408: "Geodis Park, Nashville, TN",            // COD v UZB  Jun 27
+
+  // ── Group L (Lumen Field · BC Place · BMO Field) ───────────────────────────
+  537409: "Lumen Field, Seattle, WA",              // ENG v CRO  Jun 17
+  537410: "BC Place, Vancouver",                   // GHA v PAN  Jun 17
+  537411: "BMO Field, Toronto",                    // ENG v GHA  Jun 23
+  537412: "BC Place, Vancouver",                   // PAN v CRO  Jun 23
+  537413: "Lumen Field, Seattle, WA",              // PAN v ENG  Jun 27
+  537414: "BMO Field, Toronto",                    // CRO v GHA  Jun 27
+
+  // ── Round of 32 (Jun 28 – Jul 4) ───────────────────────────────────────────
+  537417: "SoFi Stadium, Inglewood, CA",           // Jun 28
+  537423: "BC Place, Vancouver",                   // Jun 29
+  537415: "AT&T Stadium, Arlington, TX",           // Jun 29
+  537418: "MetLife Stadium, East Rutherford, NJ",  // Jun 30
+  537424: "Rose Bowl, Pasadena, CA",               // Jun 30
+  537416: "Allegiant Stadium, Las Vegas, NV",      // Jun 30
+  537425: "Hard Rock Stadium, Miami Gardens, FL",  // Jul 1
+  537426: "Arrowhead Stadium, Kansas City, MO",    // Jul 1
+  537422: "Empower Field, Denver, CO",             // Jul 1
+  537421: "Levi's Stadium, Santa Clara, CA",       // Jul 2
+  537420: "AT&T Stadium, Arlington, TX",           // Jul 2
+  537419: "Bank of America Stadium, Charlotte, NC",// Jul 2
+  537429: "Estadio Azteca, Mexico City",           // Jul 3
+  537428: "Geodis Park, Nashville, TN",            // Jul 3
+  537427: "Estadio BBVA, Monterrey",               // Jul 3
+  537430: "Lumen Field, Seattle, WA",              // Jul 4
+
+  // ── Round of 16 (Jul 4 – Jul 7) ────────────────────────────────────────────
+  537375: "MetLife Stadium, East Rutherford, NJ",  // Jul 4
+  537376: "Rose Bowl, Pasadena, CA",               // Jul 4
+  537377: "AT&T Stadium, Arlington, TX",           // Jul 5
+  537378: "SoFi Stadium, Inglewood, CA",           // Jul 6
+  537379: "Allegiant Stadium, Las Vegas, NV",      // Jul 6
+  537380: "BC Place, Vancouver",                   // Jul 7
+  537381: "Levi's Stadium, Santa Clara, CA",       // Jul 7
+  537382: "MetLife Stadium, East Rutherford, NJ",  // Jul 7
+
+  // ── Quarterfinals (Jul 9 – Jul 12) ─────────────────────────────────────────
+  537383: "MetLife Stadium, East Rutherford, NJ",  // Jul 9
+  537384: "Rose Bowl, Pasadena, CA",               // Jul 10
+  537385: "AT&T Stadium, Arlington, TX",           // Jul 11
+  537386: "SoFi Stadium, Inglewood, CA",           // Jul 12
+
+  // ── Semifinals (Jul 14 – Jul 15) ───────────────────────────────────────────
+  537387: "MetLife Stadium, East Rutherford, NJ",  // Jul 14
+  537388: "Rose Bowl, Pasadena, CA",               // Jul 15
+
+  // ── Third Place (Jul 18) ────────────────────────────────────────────────────
+  537389: "AT&T Stadium, Arlington, TX",           // Jul 18
+
+  // ── Final (Jul 19) ──────────────────────────────────────────────────────────
+  537390: "MetLife Stadium, East Rutherford, NJ",  // Jul 19
+};
+
 // ── Group name normalisation ──────────────────────────────────────────────────
 
 /** "GROUP_A" → "A",  "Group A" → "A",  null → null */
@@ -159,6 +305,7 @@ interface FDOMatch {
   matchday: number | null;
   stage:    string;
   group:    string | null;
+  venue:    string | null;
   homeTeam: FDOTeamRef;
   awayTeam: FDOTeamRef;
   score: {
@@ -276,6 +423,7 @@ export class FootballDataOrgProvider implements FootballProvider {
         matchDay,
         date:       m.utcDate.slice(0, 10),
         time:       utcToIsrael(m.utcDate),
+        venue:      m.venue ?? WC2026_VENUES[m.id] ?? undefined,
       };
     });
   }

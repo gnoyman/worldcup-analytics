@@ -566,8 +566,7 @@ export function GamesPageV2() {
   const isMobile = useIsMobile();
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
 
-  /* ── Data derivation (same logic as before, no changes) ── */
-  const allTeams    = tournament.groups.flatMap(g => g.teams);
+  /* ── Data derivation ── */
   const total       = tournament.matches.length;
   const played      = tournament.matches.filter(m => m.status === "played").length;
   const remaining   = total - played;
@@ -595,7 +594,7 @@ export function GamesPageV2() {
   const src = SRC[dataSource];
 
   function find(id: string): Team | null {
-    return teamsById.get(id) ?? allTeams.find(t => t.id === id) ?? null;
+    return teamsById.get(id) ?? null;
   }
 
   /* ── Render ── */

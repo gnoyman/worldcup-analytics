@@ -27,12 +27,12 @@ function resolveLabel(
 
 // ── Stage meta ────────────────────────────────────────────────────────────────
 
-const STAGE_META: Record<string, { label: string; color: string; bg: string }> = {
-  "Round of 32":  { label: "שלב 32",       color: "#0ea5e9", bg: "rgba(14,165,233,.12)" },
-  "Round of 16":  { label: "שמינית גמר",   color: "#8b5cf6", bg: "rgba(139,92,246,.12)" },
-  "Quarterfinal": { label: "רביע גמר",     color: "#f97316", bg: "rgba(249,115,22,.12)" },
-  "Semifinal":    { label: "חצי גמר",      color: "#10b981", bg: "rgba(16,185,129,.12)" },
-  "Final":        { label: "גמר",          color: "#f59e0b", bg: "rgba(245,158,11,.12)" },
+const STAGE_META: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+  "Round of 32":  { label: "שלב 32",      color: "#0ea5e9", bg: "rgba(14,165,233,.12)", icon: "⚽" },
+  "Round of 16":  { label: "שמינית גמר",  color: "#8b5cf6", bg: "rgba(139,92,246,.12)", icon: "🎯" },
+  "Quarterfinal": { label: "רביע גמר",    color: "#f97316", bg: "rgba(249,115,22,.12)", icon: "🏅" },
+  "Semifinal":    { label: "חצי גמר",     color: "#10b981", bg: "rgba(16,185,129,.12)", icon: "🌟" },
+  "Final":        { label: "גמר",         color: "#f59e0b", bg: "rgba(245,158,11,.12)", icon: "🏆" },
 };
 
 // ── Match card ────────────────────────────────────────────────────────────────
@@ -87,8 +87,13 @@ function MatchCard({
           </div>
         ) : (
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0 bg-[#f1f5f9] text-[#94a3b8]">?</span>
-            <span className="text-xs text-[#94a3b8] flex-1 truncate font-medium italic">
+            <span
+              className="shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{ background: `${stageColor}15`, color: stageColor, border: `1px solid ${stageColor}35` }}
+            >
+              ממתין
+            </span>
+            <span className="text-xs text-[#64748b] flex-1 min-w-0 truncate leading-snug">
               {match.homeSlot
                 ? <SlotLabel slot={match.homeSlot} />
                 : resolveLabel(match.id, "home", allMatches)}
@@ -133,8 +138,13 @@ function MatchCard({
           </div>
         ) : (
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0 bg-[#f1f5f9] text-[#94a3b8]">?</span>
-            <span className="text-xs text-[#94a3b8] flex-1 truncate font-medium italic">
+            <span
+              className="shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{ background: `${stageColor}15`, color: stageColor, border: `1px solid ${stageColor}35` }}
+            >
+              ממתין
+            </span>
+            <span className="text-xs text-[#64748b] flex-1 min-w-0 truncate leading-snug">
               {match.awaySlot
                 ? <SlotLabel slot={match.awaySlot} />
                 : resolveLabel(match.id, "away", allMatches)}
@@ -165,6 +175,7 @@ function MatchCard({
 function BracketList() {
   const { tournament } = useApp();
   const allMatches = tournament.knockoutBracket.matches;
+  const [activeStage, setActiveStage] = useState<string | null>(null);
 
   const matchesByStage = allMatches.reduce(
     (acc, m) => {
@@ -176,38 +187,77 @@ function BracketList() {
   );
 
   const stages = ["Round of 32","Round of 16","Quarterfinal","Semifinal","Final"] as const;
+  const visibleStages = activeStage ? stages.filter(s => s === activeStage) : stages;
 
   return (
     <div className="space-y-6">
-      {stages.map((stage) => {
+
+      {/* ── Stage filter pills ──────────────────────────────────────────── */}
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={() => setActiveStage(null)}
+          className="text-[10px] font-black px-3 py-1.5 rounded-full transition-all"
+          style={activeStage === null
+            ? { background: "#0f172a", color: "#fff" }
+            : { background: "#f1f5f9", color: "#64748b" }}
+        >
+          הכל
+        </button>
+        {stages.map(stage => {
+          const meta  = STAGE_META[stage];
+          const total = matchesByStage[stage]?.length ?? 0;
+          if (total === 0) return null;
+          const played   = matchesByStage[stage]?.filter(m => m.status === "played").length ?? 0;
+          const isActive = activeStage === stage;
+          return (
+            <button
+              key={stage}
+              onClick={() => setActiveStage(isActive ? null : stage)}
+              className="text-[10px] font-black px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5"
+              style={isActive
+                ? { background: meta.color, color: "#fff" }
+                : { background: meta.bg, color: meta.color, border: `1px solid ${meta.color}40` }}
+            >
+              {meta.icon} {meta.label}
+              <span style={{ opacity: 0.65 }}>·</span>
+              <span>{played}/{total}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Stage groups ────────────────────────────────────────────────── */}
+      {visibleStages.map((stage) => {
         const matches = matchesByStage[stage] ?? [];
         if (matches.length === 0) return null;
-        const meta = STAGE_META[stage];
+        const meta   = STAGE_META[stage];
+        const played = matches.filter(m => m.status === "played").length;
 
         return (
           <div key={stage}>
-            {/* Stage pill header */}
+            {/* Stage header */}
             <div className="flex items-center gap-3 mb-3">
               <div className="h-px flex-1" style={{ background: `${meta.color}30` }} />
-              <span
-                className="text-xs font-black px-4 py-1.5 rounded-full shrink-0"
-                style={{
-                  background: meta.bg,
-                  color: meta.color,
-                  border: `1px solid ${meta.color}40`,
-                  boxShadow: `0 0 12px ${meta.color}25`,
-                }}
-              >
-                {meta.label}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  className="text-xs font-black px-4 py-1.5 rounded-full"
+                  style={{
+                    background: meta.bg,
+                    color: meta.color,
+                    border: `1px solid ${meta.color}40`,
+                    boxShadow: `0 0 12px ${meta.color}25`,
+                  }}
+                >
+                  {meta.icon} {meta.label}
+                </span>
+                <span className="text-[9px] font-bold" style={{ color: "#94a3b8" }}>
+                  {played}/{matches.length} הסתיימו
+                </span>
+              </div>
               <div className="h-px flex-1" style={{ background: `${meta.color}30` }} />
             </div>
 
-            <div
-              className={`grid gap-3 ${
-                stage === "Round of 32" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
-              }`}
-            >
+            <div className="grid gap-3 grid-cols-1">
               {matches.map((match) => (
                 <MatchCard
                   key={match.id}

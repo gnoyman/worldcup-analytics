@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useApp } from "@/components/AppContext";
-import { calculateTeamProbabilities } from "@/engine/probabilities/probabilities";
-import type { KnockoutTeam, TeamProbabilities } from "@/types";
+import type { Match, Team } from "@/types";
 
 // ── Group accent gradients ─────────────────────────────────────────────────────
 
@@ -40,86 +39,70 @@ function PositionBadge({ position }: { position: number }) {
   );
 }
 
-// ── Probability bar row ───────────────────────────────────────────────────────
+// ── Team match card ───────────────────────────────────────────────────────────
 
-function ProbBar({
-  label, icon, value, color, gradient,
+function TeamMatchCard({
+  match,
+  teamId,
+  teamsById,
 }: {
-  label: string; icon: string; value: number; color: string; gradient: string;
+  match: Match;
+  teamId: string;
+  teamsById: Map<string, Team>;
 }) {
-  const pct = `${Math.round(value * 100)}%`;
+  const isHome   = match.homeTeamId === teamId;
+  const oppId    = isHome ? match.awayTeamId : match.homeTeamId;
+  const opponent = teamsById.get(oppId);
+  const myScore  = isHome ? match.homeScore : match.awayScore;
+  const oppScore = isHome ? match.awayScore : match.homeScore;
+  const played   = match.status === "played" && myScore !== undefined && oppScore !== undefined;
+
+  let resultColor = "#94a3b8";
+  let resultLabel = "–";
+  if (played) {
+    if (myScore! > oppScore!)      { resultColor = "#16a34a"; resultLabel = "W"; }
+    else if (myScore! < oppScore!) { resultColor = "#dc2626"; resultLabel = "L"; }
+    else                           { resultColor = "#0284c7"; resultLabel = "D"; }
+  }
+
+  const dateDisplay = match.date ? match.date.slice(5).replace("-", ".") : "";
+
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
+      style={{ background: "#f8fafc", border: "1px solid #e8eef8" }}
+    >
       <span
-        className="text-[9px] font-black shrink-0 w-6 h-5 flex items-center justify-center rounded"
-        style={{ background: `${color}18`, color }}
+        className="text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: `${resultColor}18`, color: resultColor, border: `1px solid ${resultColor}30` }}
       >
-        {icon}
+        {resultLabel}
       </span>
-      <span className="text-[10px] font-semibold text-[#475569] flex-1 text-right">
-        {label}
+      <span className="text-[10px] font-bold text-[#94a3b8] shrink-0 w-9">
+        {dateDisplay}
       </span>
-      <div className="w-28 h-2 rounded-full bg-[#e8eef8] overflow-hidden shrink-0">
-        <div
-          className="h-full rounded-full"
-          style={{ width: pct, background: gradient }}
-        />
+      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+        <span className="text-base leading-none shrink-0">{opponent?.flag ?? "🏳"}</span>
+        <span className="text-sm font-semibold text-[#0f172a] truncate">
+          {opponent?.name ?? oppId.toUpperCase()}
+        </span>
       </div>
-      <span
-        className="text-[10px] font-black w-8 text-left shrink-0"
-        style={{ color }}
-      >
-        {pct}
-      </span>
-    </div>
-  );
-}
-
-// ── Route bubble chain ────────────────────────────────────────────────────────
-
-function RouteBubbles({ probs }: { probs: TeamProbabilities }) {
-  const stages = [
-    { short: "בית", value: probs.qualifyFromGroup,   color: "#10b981" },
-    { short: "32",  value: probs.qualifyFromGroup,   color: "#0ea5e9" },
-    { short: "16",  value: probs.reachRound16,       color: "#8b5cf6" },
-    { short: "רב",  value: probs.reachQuarterfinal,  color: "#f97316" },
-    { short: "חצ",  value: probs.reachSemifinal,     color: "#f43f5e" },
-    { short: "ג",   value: probs.reachFinal,         color: "#f59e0b" },
-    { short: "🏆",  value: probs.winTournament,      color: "#d97706" },
-  ];
-
-  return (
-    <div className="flex items-center gap-0.5 overflow-x-auto no-scrollbar py-1" dir="ltr">
-      {stages.map((s, i) => {
-        const filled = s.value > 0.5;
-        return (
-          <div key={i} className="flex items-center gap-0.5 shrink-0">
-            <div className="flex flex-col items-center gap-0.5">
-              <span className="text-[8px] font-bold" style={{ color: s.color }}>
-                {Math.round(s.value * 100)}%
-              </span>
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black"
-                style={{
-                  background: filled ? s.color : `${s.color}15`,
-                  color: filled ? "#fff" : s.color,
-                  border: `2px solid ${s.color}${filled ? "" : "55"}`,
-                }}
-              >
-                {s.short}
-              </div>
-            </div>
-            {i < stages.length - 1 && (
-              <span
-                className="text-lg font-black leading-none shrink-0 mt-4"
-                style={{ color: "#c7d8f5" }}
-              >
-                ›
-              </span>
-            )}
-          </div>
-        );
-      })}
+      {played ? (
+        <span className="text-sm font-black text-[#0f172a] shrink-0 tabular-nums">
+          {myScore}:{oppScore}
+        </span>
+      ) : (
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <span className="text-[11px] font-bold text-[#64748b]">
+            {match.time ?? dateDisplay}
+          </span>
+          {match.venue && (
+            <span className="text-[9px] text-[#94a3b8] max-w-[80px] truncate text-right">
+              📍 {match.venue}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -127,58 +110,67 @@ function RouteBubbles({ probs }: { probs: TeamProbabilities }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function TeamPage() {
-  const { tournament } = useApp();
+  const { tournament, apiStandings, teamsById } = useApp();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
-  const allTeams     = tournament.groups.flatMap((g) => g.teams);
-  const selectedTeam = selectedTeamId ? allTeams.find((t) => t.id === selectedTeamId) : null;
+  // Team picker list: ordered from FDO standings (group A→L, position 1→4)
+  const allTeams = useMemo(() => {
+    if (!apiStandings || apiStandings.length === 0) return [];
+    return [...apiStandings]
+      .sort((a, b) => a.groupId.localeCompare(b.groupId) || a.position - b.position)
+      .map(s => s.team);
+  }, [apiStandings]);
+
+  // Resolve selected team from the shared teams map (holds Hebrew names + flags)
+  const selectedTeam = useMemo(
+    () => (selectedTeamId ? (teamsById.get(selectedTeamId) ?? null) : null),
+    [selectedTeamId, teamsById]
+  );
+
+  // Standings: FDO only — no mock fallback
   const teamStanding = selectedTeamId
-    ? tournament.standings.find((s) => s.teamId === selectedTeamId)
+    ? ((apiStandings ?? []).find(s => s.teamId === selectedTeamId) ?? null)
     : null;
+
+  // Top-8 third-place qualifiers from FDO standings only
+  const thirdPlaceQualified = useMemo(() => {
+    if (!apiStandings || apiStandings.length === 0) return new Set<string>();
+    const thirds = apiStandings.filter(s => s.position === 3);
+    const sorted = [...thirds].sort((a, b) =>
+      b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor
+    );
+    return new Set(sorted.slice(0, 8).map(s => s.teamId));
+  }, [apiStandings]);
 
   const qualifyingInfo = selectedTeamId && teamStanding
     ? {
-        position: teamStanding.position,
-        group:    teamStanding.groupId,
-        points:   teamStanding.points,
-        gd:       teamStanding.goalDifference,
-        played:   teamStanding.played,
-        wins:     teamStanding.wins,
-        draws:    teamStanding.draws,
-        losses:   teamStanding.losses,
+        position:    teamStanding.position,
+        group:       teamStanding.groupId,
+        points:      teamStanding.points,
+        gd:          teamStanding.goalDifference,
+        goalsFor:    teamStanding.goalsFor,
+        goalsAgainst: teamStanding.goalsAgainst,
+        played:      teamStanding.played,
+        wins:        teamStanding.wins,
+        draws:       teamStanding.draws,
+        losses:      teamStanding.losses,
         qualified:
           teamStanding.position === 1 ||
           teamStanding.position === 2 ||
-          (teamStanding.position === 3 &&
-            tournament.thirdPlaceTeams.some((t) => t.teamId === selectedTeamId)),
+          (teamStanding.position === 3 && thirdPlaceQualified.has(selectedTeamId)),
       }
     : null;
 
-  const probs = useMemo<TeamProbabilities | null>(
-    () =>
-      selectedTeam
-        ? calculateTeamProbabilities(
-            selectedTeam,
-            tournament.standings,
-            tournament.groups
-          )
-        : null,
-    [selectedTeam, tournament.standings, tournament.groups]
-  );
-
-  const r32Opponent = useMemo<KnockoutTeam | null>(() => {
-    if (!selectedTeamId) return null;
-    const r32 = tournament.knockoutBracket.matches.find(
-      (m) =>
-        m.stage === "Round of 32" &&
-        (m.homeTeam?.teamId === selectedTeamId ||
-          m.awayTeam?.teamId === selectedTeamId)
-    );
-    if (!r32) return null;
-    return (
-      (r32.homeTeam?.teamId === selectedTeamId ? r32.awayTeam : r32.homeTeam) ?? null
-    );
-  }, [selectedTeamId, tournament.knockoutBracket.matches]);
+  // Team's group-stage matches from the live fixtures (groupId !== "KO")
+  const teamMatches = useMemo(() => {
+    if (!selectedTeamId) return [];
+    return tournament.matches
+      .filter(m =>
+        m.groupId !== "KO" &&
+        (m.homeTeamId === selectedTeamId || m.awayTeamId === selectedTeamId)
+      )
+      .sort((a, b) => a.matchDay - b.matchDay || a.date.localeCompare(b.date));
+  }, [selectedTeamId, tournament.matches]);
 
   const heroGradient = qualifyingInfo
     ? (GROUP_GRADIENT[qualifyingInfo.group] ?? "linear-gradient(135deg,#1e40af,#0284c7)")
@@ -229,7 +221,7 @@ export function TeamPage() {
       </div>
 
       <div className="px-4 pt-4">
-        {selectedTeam && qualifyingInfo && probs ? (
+        {selectedTeam && qualifyingInfo ? (
           <div className="space-y-3">
 
             {/* ── Hero card ─────────────────────────────────────────────── */}
@@ -306,11 +298,13 @@ export function TeamPage() {
             </div>
 
             {/* ── Stats row ─────────────────────────────────────────────── */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
                 { label: "נצחונות", value: qualifyingInfo.wins,   color: "#16a34a", bg: "#f0fdf4" },
                 { label: "תיקו",   value: qualifyingInfo.draws,   color: "#0284c7", bg: "#eff9ff" },
                 { label: "הפסדים", value: qualifyingInfo.losses,  color: "#dc2626", bg: "#fff1f2" },
+                { label: "שערים", value: qualifyingInfo.goalsFor,  color: "#059669", bg: "#ecfdf5" },
+                { label: "ספג",    value: qualifyingInfo.goalsAgainst, color: "#9333ea", bg: "#faf5ff" },
                 {
                   label: "הפרש",
                   value: qualifyingInfo.gd > 0 ? `+${qualifyingInfo.gd}` : qualifyingInfo.gd,
@@ -334,6 +328,38 @@ export function TeamPage() {
                 </div>
               ))}
             </div>
+
+            {/* ── Group-stage matches ───────────────────────────────────── */}
+            {teamMatches.length > 0 && (
+              <div
+                className="rounded-2xl overflow-hidden"
+                style={{ border: "1px solid rgba(255,255,255,.08)", boxShadow: "0 4px 20px rgba(0,0,0,.35)" }}
+              >
+                <div
+                  className="flex items-center gap-2 px-4 py-3"
+                  style={{ background: "#fafcff", borderBottom: "1px solid #eef3ff" }}
+                >
+                  <div
+                    className="w-1 h-5 rounded-full shrink-0"
+                    style={{ background: "linear-gradient(to bottom,#0ea5e9,#8b5cf6)" }}
+                  />
+                  <p className="font-black text-sm text-[#0f172a]">משחקי הבית</p>
+                  <span className="text-[10px] text-[#94a3b8] font-medium" style={{ marginRight: "auto" }}>
+                    {qualifyingInfo.played}/{teamMatches.length} הסתיימו
+                  </span>
+                </div>
+                <div className="p-3 space-y-2 bg-white">
+                  {teamMatches.map(m => (
+                    <TeamMatchCard
+                      key={m.id}
+                      match={m}
+                      teamId={selectedTeamId!}
+                      teamsById={teamsById}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ── Qualification banner ──────────────────────────────────── */}
             <div
@@ -359,161 +385,6 @@ export function TeamPage() {
                     : "תוצאות נוספות נדרשות להעפלה"}
                 </p>
               </div>
-            </div>
-
-            {/* ── Probability bars ──────────────────────────────────────── */}
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{ border: "1px solid rgba(255,255,255,.08)", boxShadow: "0 4px 20px rgba(0,0,0,.35)" }}
-            >
-              <div
-                className="flex items-center gap-2 px-4 py-3"
-                style={{ background: "#fafcff", borderBottom: "1px solid #eef3ff" }}
-              >
-                <div
-                  className="w-1 h-5 rounded-full shrink-0"
-                  style={{ background: "linear-gradient(to bottom,#10b981,#d97706)" }}
-                />
-                <p className="font-black text-sm text-[#0f172a]">הסתברויות התקדמות</p>
-              </div>
-
-              <div className="px-4 py-4 space-y-3 bg-white">
-                <ProbBar label="עוברת בית"   icon="✓"  value={probs.qualifyFromGroup} color="#10b981" gradient="linear-gradient(to right,#059669,#34d399)" />
-                <ProbBar label="שלב 32"    icon="32" value={probs.qualifyFromGroup} color="#0ea5e9" gradient="linear-gradient(to right,#0369a1,#38bdf8)" />
-                <ProbBar label="שמינית גמר" icon="16" value={probs.reachRound16}    color="#8b5cf6" gradient="linear-gradient(to right,#7c3aed,#a78bfa)" />
-                <ProbBar label="רביע גמר"  icon="QF" value={probs.reachQuarterfinal} color="#f97316" gradient="linear-gradient(to right,#c2410c,#fb923c)" />
-                <ProbBar label="חצי גמר"   icon="SF" value={probs.reachSemifinal}  color="#f43f5e" gradient="linear-gradient(to right,#be123c,#fb7185)" />
-                <ProbBar label="גמר"      icon="F"  value={probs.reachFinal}       color="#f59e0b" gradient="linear-gradient(to right,#b45309,#fbbf24)" />
-                <ProbBar label="אלוף"     icon="★"  value={probs.winTournament}    color="#d97706" gradient="linear-gradient(to right,#92400e,#fcd34d)" />
-              </div>
-            </div>
-
-            {/* ── Route visualization ───────────────────────────────────── */}
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{ border: "1px solid rgba(255,255,255,.08)", boxShadow: "0 2px 12px rgba(0,0,0,.3)" }}
-            >
-              <div
-                className="flex items-center gap-2 px-4 py-2.5"
-                style={{ background: "#fafcff", borderBottom: "1px solid #eef3ff" }}
-              >
-                <p className="text-xs font-black text-[#0f172a]">מסלול בטורניר</p>
-                <span className="text-[9px] text-[#94a3b8] font-medium">· עיגול מלא = מעל 50%</span>
-              </div>
-              <div className="px-4 py-4 bg-white">
-                <RouteBubbles probs={probs} />
-              </div>
-            </div>
-
-            {/* ── R32 Opponent ──────────────────────────────────────────── */}
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{ border: "1px solid rgba(255,255,255,.08)", boxShadow: "0 4px 20px rgba(0,0,0,.35)" }}
-            >
-              {/* Header */}
-              <div
-                className="flex items-center gap-2.5 px-4 py-2.5"
-                style={{ background: "#f0f9ff", borderBottom: "1px solid #bae6fd" }}
-              >
-                <span
-                  className="text-[10px] font-black px-2.5 py-0.5 rounded-full shrink-0"
-                  style={{ background: "#0ea5e9", color: "#fff" }}
-                >
-                  שלב 32
-                </span>
-                <span className="text-xs font-bold text-[#0369a1]">מחזיק ראשון</span>
-              </div>
-
-              {r32Opponent ? (
-                <div className="p-4 bg-white">
-                  {/* Head-to-head */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex flex-col items-center gap-1.5 flex-1">
-                      <span className="text-5xl leading-none">{selectedTeam.flag}</span>
-                      <p className="text-[9px] font-bold text-[#0f172a] text-center leading-tight truncate max-w-[70px]">{selectedTeam.name}</p>
-                      <p className="text-sm font-black" style={{ color: "#0284c7" }}>
-                        {selectedTeam.strengthRating}
-                      </p>
-                    </div>
-
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                      style={{ background: "#f1f5f9" }}
-                    >
-                      <span className="text-[10px] font-black text-[#64748b]">VS</span>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-1.5 flex-1">
-                      <span className="text-5xl leading-none">{r32Opponent.team.flag}</span>
-                      <p className="text-[9px] font-bold text-[#0f172a] text-center leading-tight truncate max-w-[70px]">{r32Opponent.team.name}</p>
-                      <p
-                        className="text-sm font-black"
-                        style={{
-                          color:
-                            r32Opponent.team.strengthRating > selectedTeam.strengthRating
-                              ? "#dc2626"
-                              : "#94a3b8",
-                        }}
-                      >
-                        {r32Opponent.team.strengthRating}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Opponent origin */}
-                  <p className="text-[11px] text-center text-[#94a3b8] font-medium mb-3">
-                    {r32Opponent.position === "1st" ? "ראשון" :
-                     r32Opponent.position === "2nd" ? "שני" : "שלישי"}
-                    {" "}מבית {r32Opponent.fromGroup}
-                  </p>
-
-                  {/* Strength comparison */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center text-[9px] font-bold text-[#94a3b8]">
-                      <span className="truncate max-w-[40%]">{selectedTeam.name}</span>
-                      <span className="shrink-0 px-1">השוואת כוח</span>
-                      <span className="truncate max-w-[40%] text-left">{r32Opponent.team.name}</span>
-                    </div>
-                    <div className="flex h-3 rounded-full overflow-hidden gap-px">
-                      <div
-                        className="rounded-r-full"
-                        style={{
-                          flex: selectedTeam.strengthRating,
-                          background: "linear-gradient(to left,#0284c7,#38bdf8)",
-                        }}
-                      />
-                      <div
-                        className="rounded-l-full"
-                        style={{
-                          flex: r32Opponent.team.strengthRating,
-                          background: "linear-gradient(to right,#dc2626,#f87171)",
-                        }}
-                      />
-                    </div>
-                    <div className="text-center pt-0.5">
-                      {selectedTeam.strengthRating > r32Opponent.team.strengthRating ? (
-                        <span className="text-[11px] font-bold text-[#16a34a]">
-                          יתרון לנבחרת ✓
-                        </span>
-                      ) : selectedTeam.strengthRating < r32Opponent.team.strengthRating ? (
-                        <span className="text-[11px] font-bold text-[#dc2626]">
-                          יתרון ליריב
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-bold text-[#94a3b8]">
-                          כוחות שקולים
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 bg-white text-sm text-[#94a3b8]">
-                  {qualifyingInfo.qualified
-                    ? "הסוגר טרם עודכן"
-                    : "הנבחרת לא מעפילה לשלב הנוקאאוט"}
-                </div>
-              )}
             </div>
 
           </div>
