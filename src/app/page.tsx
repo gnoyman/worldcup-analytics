@@ -7,15 +7,13 @@ import { WorldCupHeroHeader } from "@/components/WorldCupHeroHeader";
 import { BottomNav, type Tab } from "@/components/BottomNav";
 import { GamesPageV2 } from "@/components/pages/GamesPageV2";
 import { GroupsPage } from "@/components/pages/GroupsPage";
-import { ScenariosPage } from "@/components/pages/ScenariosPage";
 import { BracketPage } from "@/components/pages/BracketPage";
 import { TeamPage } from "@/components/pages/TeamPage";
-import { ProbabilityPage } from "@/components/pages/ProbabilityPage";
 import { StatsPage } from "@/components/pages/StatsPage";
 import { DiagnosticsPage } from "@/components/pages/DiagnosticsPage";
 
 const VALID_TABS = new Set<Tab>([
-  "live", "groups", "scenarios", "bracket", "team", "probability", "statistics", "debug",
+  "live", "groups", "bracket", "team", "statistics", "debug",
 ]);
 
 function AppContent() {
@@ -25,14 +23,12 @@ function AppContent() {
 
   const renderPage = () => {
     switch (tab) {
-      case "live":        return <GamesPageV2 />;
-      case "groups":      return <GroupsPage />;
-      case "scenarios":   return <ScenariosPage />;
-      case "bracket":     return <BracketPage />;
-      case "team":        return <TeamPage />;
-      case "probability": return <ProbabilityPage />;
-      case "statistics":  return <StatsPage />;
-      case "debug":       return <DiagnosticsPage />;
+      case "live":       return <GamesPageV2 />;
+      case "groups":     return <GroupsPage />;
+      case "bracket":    return <BracketPage />;
+      case "team":       return <TeamPage />;
+      case "statistics": return <StatsPage />;
+      case "debug":      return <DiagnosticsPage />;
     }
   };
 

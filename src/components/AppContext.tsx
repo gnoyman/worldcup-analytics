@@ -18,7 +18,7 @@ import { GROUPS, MOCK_MATCHES } from "@/data/mockData";
 
 // ── Data source type ─────────────────────────────────────────────────────────
 
-export type DataSource = "loading" | "live" | "mock" | "openfootball" | "error";
+export type DataSource = "loading" | "live" | "mock" | "openfootball" | "football-data-org" | "error";
 
 // ── Context shape ────────────────────────────────────────────────────────────
 
@@ -115,7 +115,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ]);
 
         const [groupsJson, fixturesJson, standingsJson] = await Promise.all([
-          groupsRes.json()   as Promise<{ ok: boolean; data: Group[] | null }>,
+          groupsRes.json()   as Promise<{ ok: boolean; data: Group[] | null; provider?: string }>,
           fixturesRes.json() as Promise<{ ok: boolean; data: Match[];    rateLimited?: boolean }>,
           standingsRes.json() as Promise<{ ok: boolean; data: GroupStanding[]; rateLimited?: boolean }>,
         ]);
@@ -151,11 +151,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setApiStandings(standingsJson.data);
         }
 
-        // Mark data source: openfootball when groups came from that provider,
-        // error when all three calls failed (no data loaded at all), live otherwise.
-        const providerIsOpenFootball = groupsJson.ok && Array.isArray(groupsJson.data) && groupsJson.data.length > 0;
-        const allFailed = !groupsJson.ok && !fixturesJson.ok && !standingsJson.ok;
-        setDataSource(providerIsOpenFootball ? "openfootball" : allFailed ? "error" : "live");
+        // Determine data source from the provider name returned by the groups route.
+        const pname               = groupsJson.provider ?? "";
+        const isFDO               = pname === "FootballDataOrgProvider";
+        const isOpenFootball      = !isFDO && groupsJson.ok && Array.isArray(groupsJson.data) && groupsJson.data.length > 0;
+        const allFailed           = !groupsJson.ok && !fixturesJson.ok && !standingsJson.ok;
+        setDataSource(isFDO ? "football-data-org" : isOpenFootball ? "openfootball" : allFailed ? "error" : "live");
         setLastSyncAt(Date.now());
       } catch (err) {
         console.error("[AppContext] API data load failed:", err);
@@ -184,7 +185,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ok: boolean; rateLimited?: boolean; error?: string;
           data?: { fixtures: Match[]; standings: GroupStanding[]; topScorers: unknown[]; syncedAt: number; errors?: string[] };
         }>,
-        groupsRes.json() as Promise<{ ok: boolean; data: Group[] | null }>,
+        groupsRes.json() as Promise<{ ok: boolean; data: Group[] | null; provider?: string }>,
       ]);
 
       if (syncJson.rateLimited) {
@@ -219,8 +220,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setLiveMatches(fixtures.filter(m => m.date?.startsWith(today)));
 
         setLastSyncAt(syncedAt);
-        const providerIsOpenFootball = groupsJson.ok && Array.isArray(groupsJson.data) && groupsJson.data.length > 0;
-        setDataSource(providerIsOpenFootball ? "openfootball" : "live");
+        const syncPname      = groupsJson.provider ?? "";
+        const syncIsFDO      = syncPname === "FootballDataOrgProvider";
+        const syncIsOpenFB   = !syncIsFDO && groupsJson.ok && Array.isArray(groupsJson.data) && groupsJson.data.length > 0;
+        setDataSource(syncIsFDO ? "football-data-org" : syncIsOpenFB ? "openfootball" : "live");
 
         if (syncJson.data.errors?.length) {
           setSyncError(syncJson.data.errors.join(" | "));

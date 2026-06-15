@@ -10,7 +10,7 @@
  * Cache TTL: DEFAULT_TTL (24 h when API_CACHE_TTL_HOURS=24).
  */
 
-import { getProvider, getCached, setCached, DEFAULT_TTL } from "@/services/football";
+import { getProvider, getProviderName, getCached, setCached, DEFAULT_TTL } from "@/services/football";
 import type { Group } from "@/types";
 
 const CACHE_KEY = "football:groups";
@@ -19,7 +19,7 @@ export async function GET() {
   try {
     const cached = getCached<Group[]>(CACHE_KEY);
     if (cached !== null) {
-      return Response.json({ ok: true, data: cached, source: "cache" });
+      return Response.json({ ok: true, data: cached, source: "cache", provider: getProviderName() });
     }
 
     const provider = getProvider();
@@ -29,7 +29,7 @@ export async function GET() {
       setCached(CACHE_KEY, groups, DEFAULT_TTL);
     }
 
-    return Response.json({ ok: true, data: groups ?? null, source: "provider" });
+    return Response.json({ ok: true, data: groups ?? null, source: "provider", provider: getProviderName() });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return Response.json({ ok: false, error: message }, { status: 500 });

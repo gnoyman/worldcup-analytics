@@ -20,6 +20,9 @@ import {
   DEFAULT_TTL,
   isRateLimited,
   recordSyncCompleted,
+  FDO_CACHE_MATCHES,
+  FDO_CACHE_STANDINGS,
+  FDO_CACHE_SCORERS,
 } from "@/services/football";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -71,7 +74,10 @@ export async function POST() {
   clearCacheKey("football:standings");
   clearCacheKey("football:topscorers");
   clearCacheKey("football:groups");
-  clearCacheKey("openfootball:wc2026"); // OpenFootball raw JSON cache
+  clearCacheKey("openfootball:wc2026");  // OpenFootball raw JSON cache
+  clearCacheKey(FDO_CACHE_MATCHES);      // football-data.org raw matches
+  clearCacheKey(FDO_CACHE_STANDINGS);    // football-data.org standings
+  clearCacheKey(FDO_CACHE_SCORERS);      // football-data.org scorers
 
   // ── Fetch all three in parallel ───────────────────────────────────────────
   const [fixtures, standings, topScorers] = await Promise.all([

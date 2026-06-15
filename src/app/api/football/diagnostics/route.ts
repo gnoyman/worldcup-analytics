@@ -142,8 +142,11 @@ async function probeCountries(): Promise<AuthProbeResult> {
 
 export async function GET(request: NextRequest) {
   const test = request.nextUrl.searchParams.get("test");
-  const isMock = getProviderName() === "MockProvider";
-  const rawKey = process.env.API_FOOTBALL_KEY ?? "";
+  const isMock  = getProviderName() === "MockProvider";
+  const isFDO   = getProviderName() === "FootballDataOrgProvider";
+  const rawKey  = isFDO
+    ? (process.env.FOOTBALL_DATA_ORG_KEY ?? "")
+    : (process.env.API_FOOTBALL_KEY ?? "");
   const hasApiKey = !isMock && rawKey.trim().length > 0;
   const quota = getQuota();
 

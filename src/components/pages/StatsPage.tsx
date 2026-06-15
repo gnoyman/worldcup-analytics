@@ -237,7 +237,7 @@ export function StatsPage() {
   const [loadDone, setLoadDone] = useState(false);
 
   const isOpenfootball = dataSource === "openfootball";
-  const isLive         = dataSource === "live";
+  const isLive         = dataSource === "live" || dataSource === "football-data-org";
 
   // Re-run whenever the data source changes so the view updates automatically.
   useEffect(() => {

@@ -9,11 +9,12 @@ import type { GroupStanding, Match, Team } from "@/types";
 // ── Data source badge ─────────────────────────────────────────────────────────
 
 const SOURCE_CFG: Record<DataSource, { dot: string; label: string; color: string; bg: string }> = {
-  live:         { dot: "🟢", label: "Live API",     color: "#15803d", bg: "#dcfce7" },
-  openfootball: { dot: "🟢", label: "OpenFootball", color: "#1d4ed8", bg: "#dbeafe" },
-  mock:         { dot: "🟡", label: "Mock",         color: "#92400e", bg: "#fef9c3" },
-  error:        { dot: "🔴", label: "שגיאה",        color: "#dc2626", bg: "#fee2e2" },
-  loading:      { dot: "⏳", label: "טוען…",        color: "#64748b", bg: "#f1f5f9" },
+  live:                { dot: "🟢", label: "Live API",          color: "#15803d", bg: "#dcfce7" },
+  "football-data-org": { dot: "🟢", label: "football-data.org", color: "#15803d", bg: "#dcfce7" },
+  openfootball:        { dot: "🟢", label: "OpenFootball",      color: "#1d4ed8", bg: "#dbeafe" },
+  mock:                { dot: "🟡", label: "Mock",              color: "#92400e", bg: "#fef9c3" },
+  error:               { dot: "🔴", label: "שגיאה",             color: "#dc2626", bg: "#fee2e2" },
+  loading:             { dot: "⏳", label: "טוען…",             color: "#64748b", bg: "#f1f5f9" },
 };
 
 // ── Group accent colors ───────────────────────────────────────────────────────

@@ -5,10 +5,8 @@ import Link from "next/link";
 export type Tab =
   | "live"
   | "groups"
-  | "scenarios"
   | "bracket"
   | "team"
-  | "probability"
   | "statistics"
   | "debug";
 
@@ -17,14 +15,12 @@ interface BottomNavProps {
 }
 
 const NAV_TABS: Array<{ id: Tab; label: string; icon: string }> = [
-  { id: "live",        label: "משחקים",      icon: "📅" },
-  { id: "groups",      label: "בתים",        icon: "🏆" },
-  { id: "bracket",     label: "הצלבות",      icon: "🎯" },
-  { id: "team",        label: "נבחרת",       icon: "⚽" },
-  { id: "scenarios",   label: "תרחישים",     icon: "✏️"  },
-  { id: "probability", label: "הסתב׳",       icon: "📈" },
-  { id: "statistics",  label: "סטטיסטיקות",  icon: "🏅" },
-  { id: "debug",       label: "דיאגנוסטיקה", icon: "🔧" },
+  { id: "live",       label: "משחקים",      icon: "📅" },
+  { id: "groups",     label: "בתים",        icon: "🏆" },
+  { id: "bracket",    label: "הצלבות",      icon: "🎯" },
+  { id: "team",       label: "נבחרת",       icon: "⚽" },
+  { id: "statistics", label: "סטטיסטיקות",  icon: "🏅" },
+  { id: "debug",      label: "דיאגנוסטיקה", icon: "🔧" },
 ];
 
 export function BottomNav({ currentTab }: BottomNavProps) {

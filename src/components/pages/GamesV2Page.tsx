@@ -17,11 +17,12 @@ function gc(id: string) { return GC[id] ?? "#94a3b8"; }
 // ─── Source badge config ──────────────────────────────────────────────────────
 
 const SRC: Record<DataSource, { dot: string; label: string }> = {
-  live:         { dot: "🟢", label: "Live" },
-  openfootball: { dot: "🟢", label: "OpenFootball" },
-  mock:         { dot: "🟡", label: "Mock" },
-  error:        { dot: "🔴", label: "Error" },
-  loading:      { dot: "⏳", label: "Loading" },
+  live:                { dot: "🟢", label: "Live" },
+  "football-data-org": { dot: "🟢", label: "football-data.org" },
+  openfootball:        { dot: "🟢", label: "OpenFootball" },
+  mock:                { dot: "🟡", label: "Mock" },
+  error:               { dot: "🔴", label: "Error" },
+  loading:             { dot: "⏳", label: "Loading" },
 };
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────

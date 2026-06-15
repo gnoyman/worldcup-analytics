@@ -11,11 +11,12 @@ import type { GroupStanding, Match, Team, TournamentState } from "@/types";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SRC: Record<DataSource, { dot: string; label: string; color: string; bg: string; border: string }> = {
-  live:         { dot: "🟢", label: "Live API",     color: "#15803d", bg: "#dcfce7", border: "#86efac" },
-  openfootball: { dot: "🟢", label: "OpenFootball", color: "#1d4ed8", bg: "#dbeafe", border: "#93c5fd" },
-  mock:         { dot: "🟡", label: "Mock Data",    color: "#92400e", bg: "#fef9c3", border: "#fde68a" },
-  error:        { dot: "🔴", label: "שגיאה",        color: "#dc2626", bg: "#fee2e2", border: "#fca5a5" },
-  loading:      { dot: "⏳", label: "טוען…",        color: "#64748b", bg: "#f1f5f9", border: "#e2e8f0" },
+  live:                { dot: "🟢", label: "Live API",          color: "#15803d", bg: "#dcfce7", border: "#86efac" },
+  "football-data-org": { dot: "🟢", label: "football-data.org", color: "#15803d", bg: "#dcfce7", border: "#86efac" },
+  openfootball:        { dot: "🟢", label: "OpenFootball",      color: "#1d4ed8", bg: "#dbeafe", border: "#93c5fd" },
+  mock:                { dot: "🟡", label: "Mock Data",         color: "#92400e", bg: "#fef9c3", border: "#fde68a" },
+  error:               { dot: "🔴", label: "שגיאה",             color: "#dc2626", bg: "#fee2e2", border: "#fca5a5" },
+  loading:             { dot: "⏳", label: "טוען…",             color: "#64748b", bg: "#f1f5f9", border: "#e2e8f0" },
 };
 
 const GRP: Record<string, { grad: string; accent: string; pale: string }> = {
@@ -118,10 +119,11 @@ function StatCard({ icon, label, value, sub, iconGrad }: {
 // Today's match sub-card (inside the section card)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const TBD_TEAM: Team = { id: "tbd", code: "TBD", name: "ממתין", flag: "🏳️", strengthRating: 0 };
+
 function TodayMatchSubCard({ m, findTeam }: { m: Match; findTeam: (id: string) => Team | null }) {
-  const h = findTeam(m.homeTeamId);
-  const a = findTeam(m.awayTeamId);
-  if (!h || !a) return null;
+  const h = findTeam(m.homeTeamId) ?? TBD_TEAM;
+  const a = findTeam(m.awayTeamId) ?? TBD_TEAM;
 
   const done     = m.status === "played";
   const hasScore = done && m.homeScore !== undefined && m.awayScore !== undefined;
@@ -383,9 +385,8 @@ function FeaturedGroup({ tournament, apiStandings }: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function UpcomingRow({ m, findTeam }: { m: Match; findTeam: (id: string) => Team | null }) {
-  const h = findTeam(m.homeTeamId);
-  const a = findTeam(m.awayTeamId);
-  if (!h || !a) return null;
+  const h = findTeam(m.homeTeamId) ?? TBD_TEAM;
+  const a = findTeam(m.awayTeamId) ?? TBD_TEAM;
 
   return (
     <div style={{
@@ -474,9 +475,8 @@ function DateColumn({ date, matches, findTeam }: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ResultRow({ m, findTeam }: { m: Match; findTeam: (id: string) => Team | null }) {
-  const h = findTeam(m.homeTeamId);
-  const a = findTeam(m.awayTeamId);
-  if (!h || !a) return null;
+  const h = findTeam(m.homeTeamId) ?? TBD_TEAM;
+  const a = findTeam(m.awayTeamId) ?? TBD_TEAM;
 
   const hw = (m.homeScore ?? 0) > (m.awayScore ?? 0);
   const aw = (m.awayScore ?? 0) > (m.homeScore ?? 0);
@@ -564,6 +564,7 @@ function useIsMobile(bp = 768) {
 export function GamesPageV2() {
   const { tournament, dataSource, teamsById, lastSyncAt, apiStandings } = useApp();
   const isMobile = useIsMobile();
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
 
   /* ── Data derivation (same logic as before, no changes) ── */
   const allTeams    = tournament.groups.flatMap(g => g.teams);
@@ -698,19 +699,6 @@ export function GamesPageV2() {
               )}
             </div>
 
-            {/* Footer link */}
-            <div style={{
-              padding: "10px 16px 12px",
-              borderTop: "1px solid #f1f5f9",
-            }}>
-              <button style={{
-                fontSize: "12px", fontWeight: 700, color: "#0284c7",
-                background: "none", border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: "4px", padding: 0,
-              }}>
-                <span>←</span> צפה בכל המשחקים של היום
-              </button>
-            </div>
           </Card>
         </div>
 
@@ -726,7 +714,7 @@ export function GamesPageV2() {
             {/* Date columns grid — show all dates 2-up */}
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {/* Pair up dates */}
-              {Array.from({ length: Math.ceil(Math.min(futureByDate.size, 6) / 2) }, (_, i) => {
+              {Array.from({ length: Math.ceil((showAllUpcoming ? futureByDate.size : Math.min(futureByDate.size, 6)) / 2) }, (_, i) => {
                 const allDates = [...futureByDate.keys()];
                 const d1 = allDates[i * 2];
                 const d2 = allDates[i * 2 + 1];
@@ -753,17 +741,22 @@ export function GamesPageV2() {
               })}
             </div>
 
-            {/* View all link */}
-            <div style={{ marginTop: "14px", textAlign: "center" }}>
-              <button style={{
-                fontSize: "12px", fontWeight: 700, color: "#0284c7",
-                background: "none", border: "1px solid #bae6fd", borderRadius: "999px",
-                cursor: "pointer", padding: "7px 18px",
-                display: "inline-flex", alignItems: "center", gap: "4px",
-              }}>
-                <span>←</span> צפה בכל המשחקים העתידיים
-              </button>
-            </div>
+            {/* View all — hidden once expanded */}
+            {!showAllUpcoming && (
+              <div style={{ marginTop: "14px", textAlign: "center" }}>
+                <button
+                  onClick={() => setShowAllUpcoming(true)}
+                  style={{
+                    fontSize: "12px", fontWeight: 700, color: "#0284c7",
+                    background: "none", border: "1px solid #bae6fd", borderRadius: "999px",
+                    cursor: "pointer", padding: "7px 18px",
+                    display: "inline-flex", alignItems: "center", gap: "4px",
+                  }}
+                >
+                  <span>←</span> צפה בכל המשחקים העתידיים
+                </button>
+              </div>
+            )}
           </div>
         )}
 
