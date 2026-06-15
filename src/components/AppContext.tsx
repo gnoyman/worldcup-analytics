@@ -80,7 +80,7 @@ function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_DATA !== "false";
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true";
 
 // ── Provider ─────────────────────────────────────────────────────────────────
 

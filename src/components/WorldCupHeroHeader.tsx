@@ -4,7 +4,7 @@ import { useState, useEffect, useId, type ComponentType } from "react";
 import { useApp } from "@/components/AppContext";
 import { CanadaFlag, USAFlag, MexicoFlag } from "@/components/HostFlags";
 
-const USE_MOCK             = process.env.NEXT_PUBLIC_USE_MOCK_DATA              !== "false";
+const USE_MOCK             = process.env.NEXT_PUBLIC_USE_MOCK_DATA              === "true";
 const ALLOW_MANUAL_REFRESH = process.env.NEXT_PUBLIC_API_ALLOW_MANUAL_REFRESH   !== "false";
 
 // ─────────────────────────────────────────────────────────────────────────────
