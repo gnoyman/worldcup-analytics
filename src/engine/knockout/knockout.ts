@@ -1,4 +1,4 @@
-import { GroupStanding, KnockoutMatch, KnockoutTeam, KnockoutStage } from "@/types";
+import { GroupStanding, KnockoutMatch, KnockoutTeam, KnockoutStage, Match } from "@/types";
 import { getTopEightThirdPlaceTeams } from "@/engine/standings/standings";
 
 // ─── WC 2026 Real Bracket ──────────────────────────────────────────────────────
@@ -278,6 +278,104 @@ export function advanceWinner(
     }
     return m;
   });
+}
+
+/**
+ * Inject official knockout results from the data provider into the internal
+ * bracket tree built by buildWC2026KnockoutBracket().
+ *
+ * For each played KO fixture (groupId === "KO", status === "played", teams known):
+ *   1. Find the matching bracket slot by team IDs.
+ *   2. Apply score + status.
+ *   3. Call advanceWinner() to propagate the winner into the next round.
+ *
+ * Matches are processed in stage order (R32 → R16 → QF → SF → Final) so that
+ * winners are propagated before downstream slots are searched.
+ *
+ * Silent skips:
+ *   - TBD fixtures (homeTeamId/awayTeamId === "tbd")
+ *   - THIRD_PLACE fixtures (no bracket slot exists)
+ *   - Matches where the slot cannot be found (e.g. data inconsistency)
+ *   - Penalties draws without a knockoutWinner field (warns in development)
+ */
+export function applyKnockoutResults(
+  bracket: KnockoutMatch[],
+  koFixtures: Match[]
+): KnockoutMatch[] {
+  const eligible = koFixtures.filter(
+    (m) =>
+      m.groupId === "KO" &&
+      m.status === "played" &&
+      m.homeTeamId !== "tbd" &&
+      m.awayTeamId !== "tbd" &&
+      m.homeScore !== undefined &&
+      m.awayScore !== undefined
+  );
+
+  if (eligible.length === 0) return bracket;
+
+  const STAGE_ORDER: Record<string, number> = {
+    LAST_32:        1,
+    LAST_16:        2,
+    QUARTER_FINALS: 3,
+    SEMI_FINALS:    4,
+    THIRD_PLACE:    5,
+    FINAL:          6,
+  };
+
+  const sorted = [...eligible].sort(
+    (a, b) =>
+      (STAGE_ORDER[a.stage ?? ""] ?? 9) - (STAGE_ORDER[b.stage ?? ""] ?? 9)
+  );
+
+  let current = [...bracket];
+
+  for (const fixture of sorted) {
+    // Locate the bracket slot by matching both team IDs (order may differ)
+    const slot = current.find(
+      (b) =>
+        (b.homeTeam?.teamId === fixture.homeTeamId &&
+          b.awayTeam?.teamId === fixture.awayTeamId) ||
+        (b.homeTeam?.teamId === fixture.awayTeamId &&
+          b.awayTeam?.teamId === fixture.homeTeamId)
+    );
+
+    if (!slot) continue; // THIRD_PLACE or winner not yet propagated — skip
+
+    // Determine winner; draw on full time means ET/penalties — use knockoutWinner
+    let winnerId: string;
+    if (fixture.homeScore! > fixture.awayScore!) {
+      winnerId = fixture.homeTeamId;
+    } else if (fixture.awayScore! > fixture.homeScore!) {
+      winnerId = fixture.awayTeamId;
+    } else if (fixture.knockoutWinner === "home") {
+      winnerId = fixture.homeTeamId;
+    } else if (fixture.knockoutWinner === "away") {
+      winnerId = fixture.awayTeamId;
+    } else {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          `[knockout] Cannot determine winner for fixture ${fixture.id} — equal scores and no knockoutWinner`
+        );
+      }
+      continue;
+    }
+
+    // Map FDO home/away onto bracket home/away (the two may be swapped)
+    const fdoHomeIsBracketHome = slot.homeTeam?.teamId === fixture.homeTeamId;
+    const bHome = fdoHomeIsBracketHome ? fixture.homeScore : fixture.awayScore;
+    const bAway = fdoHomeIsBracketHome ? fixture.awayScore : fixture.homeScore;
+
+    current = current.map((b) =>
+      b.id !== slot.id
+        ? b
+        : { ...b, homeScore: bHome, awayScore: bAway, status: "played" as const, winner: winnerId }
+    );
+
+    current = advanceWinner(slot.id, winnerId, current);
+  }
+
+  return current;
 }
 
 /**

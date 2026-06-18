@@ -12,7 +12,7 @@ import {
   getQualifiedTeams,
   getTopEightThirdPlaceTeams,
 } from "@/engine/standings/standings";
-import { buildWC2026KnockoutBracket } from "@/engine/knockout/knockout";
+import { buildWC2026KnockoutBracket, applyKnockoutResults } from "@/engine/knockout/knockout";
 import { runMonteCarlo, DEFAULT_ITERATIONS } from "@/engine/monteCarlo/monteCarlo";
 import { GROUPS, MOCK_MATCHES } from "@/data/mockData";
 
@@ -59,13 +59,23 @@ function buildTournamentState(matches: Match[], groups: Group[]): TournamentStat
   const thirdPlaceTeams = getTopEightThirdPlaceTeams(standings);
   const knockoutMatches = buildWC2026KnockoutBracket(standings);
 
+  // Inject official knockout results from the provider into the bracket tree.
+  // No-op during the group stage (koFixtures is empty).
+  // Once knockout matches are played, applyKnockoutResults() applies scores and
+  // advances winners into the correct downstream slots via advanceWinner().
+  const koFixtures = matches.filter((m) => m.groupId === "KO");
+  const finalBracket =
+    koFixtures.length > 0
+      ? applyKnockoutResults(knockoutMatches, koFixtures)
+      : knockoutMatches;
+
   return {
     groups,
     matches,
     standings,
     projectedQualifiers: qualified,
     thirdPlaceTeams,
-    knockoutBracket: { matches: knockoutMatches, stage: "Round of 32" },
+    knockoutBracket: { matches: finalBracket, stage: "Round of 32" },
   };
 }
 

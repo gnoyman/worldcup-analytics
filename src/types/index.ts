@@ -30,6 +30,20 @@ export interface Match {
   time?: string;
   /** Venue / stadium name, when provided by the data source. */
   venue?: string;
+  /**
+   * FDO stage string, preserved verbatim from the API.
+   * Group stage: "GROUP_STAGE"
+   * Knockout:    "LAST_32" | "LAST_16" | "QUARTER_FINALS" | "SEMI_FINALS" | "THIRD_PLACE" | "FINAL"
+   * Absent on mock data and OpenFootball matches.
+   */
+  stage?: string;
+  /**
+   * Knockout matches that end level after full-time (ET/penalties).
+   * FDO's score.winner field indicates the actual winner.
+   * "home" → homeTeamId won; "away" → awayTeamId won.
+   * Absent on group-stage matches and knockout matches decided in regulation.
+   */
+  knockoutWinner?: "home" | "away";
 }
 
 // ─── Group Stage ──────────────────────────────────────────────────────────────

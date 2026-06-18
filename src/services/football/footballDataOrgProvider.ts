@@ -424,6 +424,11 @@ export class FootballDataOrgProvider implements FootballProvider {
         date:       m.utcDate.slice(0, 10),
         time:       utcToIsrael(m.utcDate),
         venue:      m.venue ?? WC2026_VENUES[m.id] ?? undefined,
+        stage:      m.stage,
+        knockoutWinner:
+          !isGroup && m.score.winner === "HOME_TEAM" ? "home" :
+          !isGroup && m.score.winner === "AWAY_TEAM" ? "away" :
+          undefined,
       };
     });
   }

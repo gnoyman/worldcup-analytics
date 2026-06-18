@@ -121,6 +121,20 @@ function StatCard({ icon, label, value, sub, iconGrad }: {
 
 const TBD_TEAM: Team = { id: "tbd", code: "TBD", name: "ממתין", flag: "🏳️", strengthRating: 0 };
 
+const KO_STAGE_LABELS: Record<string, string> = {
+  LAST_32:        "שלב 32",
+  LAST_16:        "שמינית גמר",
+  QUARTER_FINALS: "רבע גמר",
+  SEMI_FINALS:    "חצי גמר",
+  THIRD_PLACE:    "מקום שלישי",
+  FINAL:          "גמר",
+};
+
+function matchStageLabel(m: Match): string {
+  if (m.groupId !== "KO") return `בית ${m.groupId}`;
+  return (m.stage && KO_STAGE_LABELS[m.stage]) ? KO_STAGE_LABELS[m.stage] : "נוקאאוט";
+}
+
 function TodayMatchSubCard({ m, findTeam }: { m: Match; findTeam: (id: string) => Team | null }) {
   const h = findTeam(m.homeTeamId) ?? TBD_TEAM;
   const a = findTeam(m.awayTeamId) ?? TBD_TEAM;
@@ -198,7 +212,7 @@ function TodayMatchSubCard({ m, findTeam }: { m: Match; findTeam: (id: string) =
           padding: "2px 9px", borderRadius: "999px",
           background: "#f1f5f9", color: "#64748b",
         }}>
-          בית {m.groupId}
+          {matchStageLabel(m)}
         </span>
         {m.venue && (
           <span style={{
@@ -423,7 +437,7 @@ function UpcomingRow({ m, findTeam }: { m: Match; findTeam: (id: string) => Team
       {/* Group + venue */}
       <div style={{ marginTop: "4px", display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
         <span style={{ fontSize: "9px", fontWeight: 600, color: "#94a3b8" }}>
-          בית {m.groupId}
+          {matchStageLabel(m)}
         </span>
         {m.venue && (
           <>
