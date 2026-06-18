@@ -80,7 +80,7 @@ function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true";
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_DATA !== "false";
 
 // ── Provider ─────────────────────────────────────────────────────────────────
 
@@ -164,11 +164,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Defer to the next macrotask so React hydration completes before any
-    // state updates fire. Without this, fast localhost API responses cause
-    // hydration mismatches (data source badge in GamesPageV2, group flags in GroupsPage).
-    const t = setTimeout(() => { void loadApiData(); }, 0);
-    return () => clearTimeout(t);
+    loadApiData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Manual sync ──────────────────────────────────────────────────────────

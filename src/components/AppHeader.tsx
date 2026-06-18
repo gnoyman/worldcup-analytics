@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useApp } from "@/components/AppContext";
 
-const USE_MOCK             = process.env.NEXT_PUBLIC_USE_MOCK_DATA              === "true";
+const USE_MOCK             = process.env.NEXT_PUBLIC_USE_MOCK_DATA              !== "false";
 const ALLOW_MANUAL_REFRESH = process.env.NEXT_PUBLIC_API_ALLOW_MANUAL_REFRESH   !== "false";
 
 // ── FIFA World Cup Trophy ─────────────────────────────────────────────────────
@@ -97,8 +96,6 @@ function WCTrophy() {
 
 export function AppHeader() {
   const { syncInProgress, lastSyncAt, syncError, manualSync, rateLimited } = useApp();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
 
   const showSyncBar = !USE_MOCK;
 
@@ -297,11 +294,7 @@ export function AppHeader() {
           }}
         >
           <div className="min-w-0 flex-1" dir="rtl">
-            {!mounted ? (
-              <p className="text-[10px] text-blue-300 leading-tight">
-                לא סונכרן עדיין
-              </p>
-            ) : rateLimited ? (
+            {rateLimited ? (
               <p className="text-[10px] font-bold text-red-300 leading-tight truncate">
                 🔴 מכסת API יומית נוצלה. מוצגים נתונים שמורים/מוקאפ.
               </p>
