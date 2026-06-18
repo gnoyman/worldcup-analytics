@@ -5,93 +5,6 @@ import { useApp } from "@/components/AppContext";
 const USE_MOCK             = process.env.NEXT_PUBLIC_USE_MOCK_DATA              !== "false";
 const ALLOW_MANUAL_REFRESH = process.env.NEXT_PUBLIC_API_ALLOW_MANUAL_REFRESH   !== "false";
 
-// ── FIFA World Cup Trophy ─────────────────────────────────────────────────────
-// Shape: globe at the top supported by two arching figures, gold base
-// viewBox 0 0 56 70 — displayed at 86×107
-
-function WCTrophy() {
-  return (
-    <svg
-      width="86"
-      height="107"
-      viewBox="0 0 56 70"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-      style={{ display: "block", flexShrink: 0 }}
-    >
-      <defs>
-        <linearGradient id="tg" x1="5%" y1="0%" x2="95%" y2="100%">
-          <stop offset="0%"   stopColor="#fef9c3" />
-          <stop offset="22%"  stopColor="#fcd34d" />
-          <stop offset="58%"  stopColor="#d97706" />
-          <stop offset="100%" stopColor="#78350f" />
-        </linearGradient>
-        <linearGradient id="ts" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stopColor="#fef3c7" />
-          <stop offset="50%"  stopColor="#f59e0b" />
-          <stop offset="100%" stopColor="#92400e" />
-        </linearGradient>
-        <radialGradient id="tgr" cx="36%" cy="30%" r="68%">
-          <stop offset="0%"   stopColor="#fef9c3" />
-          <stop offset="42%"  stopColor="#fbbf24" />
-          <stop offset="100%" stopColor="#b45309" />
-        </radialGradient>
-      </defs>
-
-      {/* ── Left support figure ── */}
-      <path
-        d="M13 27 C5 36 4 48 8 56 L14 56 C10 48 11 36 19 28 Z"
-        fill="url(#ts)"
-      />
-
-      {/* ── Right support figure (mirror of left around x=28) ── */}
-      <path
-        d="M43 27 C51 36 52 48 48 56 L42 56 C46 48 45 36 37 28 Z"
-        fill="url(#ts)"
-      />
-
-      {/* ── Globe ── */}
-      <circle cx="28" cy="15" r="13" fill="url(#tgr)" />
-
-      {/* Globe geographic lines */}
-      <ellipse cx="28" cy="15" rx="13" ry="4.2"
-               fill="none" stroke="rgba(120,53,15,0.14)" strokeWidth="0.75" />
-      <ellipse cx="28" cy="15" rx="8"   ry="13"
-               fill="none" stroke="rgba(120,53,15,0.10)" strokeWidth="0.65" />
-
-      {/* Globe shine */}
-      <circle cx="21" cy="9"  r="4.5" fill="rgba(255,255,255,0.28)" />
-      <circle cx="22" cy="10" r="1.8" fill="rgba(255,255,255,0.48)" />
-
-      {/* Globe right inner shadow */}
-      <path d="M36 6 C39 10 39 20 37 25"
-            stroke="rgba(120,53,15,0.14)" strokeWidth="2.5"
-            strokeLinecap="round" fill="none" />
-
-      {/* Star emblem */}
-      <text x="28" y="19.5" textAnchor="middle" fontSize="9"
-            fill="rgba(255,255,255,0.55)">★</text>
-
-      {/* ── Base ── */}
-
-      {/* Collar band */}
-      <rect x="7"  y="56" width="42" height="4.5" rx="2.25" fill="url(#ts)" />
-
-      {/* Green malachite accent */}
-      <rect x="5"  y="60.5" width="46" height="2.5"  rx="1.25" fill="#166534" opacity="0.82" />
-
-      {/* Main base plinth */}
-      <rect x="2"  y="63"   width="52" height="8"    rx="4"    fill="url(#tg)" />
-      <rect x="6"  y="64.5" width="44" height="1.8"  rx="0.9"  fill="rgba(255,255,255,0.28)" />
-
-      {/* Foot */}
-      <rect x="0"  y="71"   width="56" height="4.5"  rx="2.25" fill="url(#ts)" />
-      <rect x="4"  y="72"   width="48" height="1.5"  rx="0.75" fill="rgba(255,255,255,0.18)" />
-    </svg>
-  );
-}
-
 // ── AppHeader ─────────────────────────────────────────────────────────────────
 
 export function AppHeader() {
@@ -193,35 +106,22 @@ export function AppHeader() {
             minWidth: 0,
           }}
         >
-          {/* Trophy with glow */}
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            {/* Radial glow disc */}
-            <div
+          {/* Trophy image with glow */}
+          <div
+            style={{
+              flexShrink: 0,
+              filter:
+                "drop-shadow(0 0 18px rgba(251,191,36,0.70))" +
+                " drop-shadow(0 6px 16px rgba(0,0,0,0.55))",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/wc-trophy.png"
+              alt=""
               aria-hidden
-              style={{
-                position: "absolute",
-                inset: "-16px",
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(ellipse 85% 80% at 50% 54%," +
-                  "rgba(251,191,36,0.40) 0%," +
-                  "rgba(251,191,36,0.12) 55%," +
-                  "transparent 100%)",
-                pointerEvents: "none",
-              }}
+              style={{ height: "107px", width: "auto", display: "block" }}
             />
-            {/* Drop-shadow filter */}
-            <div
-              style={{
-                filter:
-                  "drop-shadow(0 0 22px rgba(251,191,36,0.72))" +
-                  " drop-shadow(0 0 8px  rgba(251,191,36,0.40))" +
-                  " drop-shadow(0 5px 14px rgba(0,0,0,0.65))",
-                position: "relative",
-              }}
-            >
-              <WCTrophy />
-            </div>
           </div>
 
           {/* Title block */}
@@ -254,34 +154,6 @@ export function AppHeader() {
           </div>
         </div>
 
-        {/* ── Hamburger menu ────────────────────────────────────────── */}
-        <div
-          style={{
-            flexShrink: 0,
-            cursor: "pointer",
-            display: "flex",
-            flexDirection: "column",
-            gap: "5px",
-            padding: "6px 4px",
-          }}
-          aria-label="תפריט"
-        >
-          {[22, 14, 22].map((w, i) => (
-            <span
-              key={i}
-              style={{
-                display: "block",
-                width: `${w}px`,
-                height: "2.5px",
-                borderRadius: "2px",
-                background:
-                  i === 1
-                    ? "rgba(255,255,255,0.48)"
-                    : "rgba(255,255,255,0.75)",
-              }}
-            />
-          ))}
-        </div>
       </div>
 
       {/* ── Sync bar (live / API mode only) ────────────────────────── */}
