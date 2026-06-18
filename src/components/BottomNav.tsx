@@ -4,6 +4,7 @@ import Link from "next/link";
 
 export type Tab =
   | "live"
+  | "scores365"
   | "groups"
   | "bracket"
   | "team"
@@ -16,6 +17,7 @@ interface BottomNavProps {
 
 const NAV_TABS: Array<{ id: Tab; label: string; icon: string }> = [
   { id: "live",       label: "משחקים",      icon: "📅" },
+  { id: "scores365",  label: "לייב",        icon: "🔴" },
   { id: "groups",     label: "בתים",        icon: "🏆" },
   { id: "bracket",    label: "הצלבות",      icon: "🎯" },
   { id: "team",       label: "נבחרת",       icon: "⚽" },

@@ -164,7 +164,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    loadApiData();
+    // Defer to the next macrotask so React hydration completes before any
+    // state updates fire. Without this, fast localhost API responses cause
+    // hydration mismatches (data source badge in GamesPageV2, group flags in GroupsPage).
+    const t = setTimeout(() => { void loadApiData(); }, 0);
+    return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Manual sync ──────────────────────────────────────────────────────────

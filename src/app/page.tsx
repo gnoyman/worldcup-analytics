@@ -11,9 +11,10 @@ import { BracketPage } from "@/components/pages/BracketPage";
 import { TeamPage } from "@/components/pages/TeamPage";
 import { StatsPage } from "@/components/pages/StatsPage";
 import { DiagnosticsPage } from "@/components/pages/DiagnosticsPage";
+import { Scores365Page } from "@/components/pages/Scores365Page";
 
 const VALID_TABS = new Set<Tab>([
-  "live", "groups", "bracket", "team", "statistics", "debug",
+  "live", "scores365", "groups", "bracket", "team", "statistics", "debug",
 ]);
 
 function AppContent() {
@@ -24,6 +25,7 @@ function AppContent() {
   const renderPage = () => {
     switch (tab) {
       case "live":       return <GamesPageV2 />;
+      case "scores365":  return <Scores365Page />;
       case "groups":     return <GroupsPage />;
       case "bracket":    return <BracketPage />;
       case "team":       return <TeamPage />;
