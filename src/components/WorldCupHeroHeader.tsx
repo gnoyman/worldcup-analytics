@@ -177,7 +177,7 @@ export function WorldCupHeroHeader() {
               alt=""
               aria-hidden
               style={{
-                height: isMobile ? "110px" : "205px",
+                height: isMobile ? "88px" : "170px",
                 width: "auto",
                 display: "block",
                 position: "relative",
