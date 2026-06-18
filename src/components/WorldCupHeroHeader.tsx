@@ -150,23 +150,40 @@ export function WorldCupHeroHeader() {
           }}
         >
           {/* ── Trophy image ─────────────────────────────────────────── */}
-          <div
-            style={{
-              flexShrink: 0,
-              filter:
-                "drop-shadow(0 0 18px rgba(251,191,36,0.70))" +
-                " drop-shadow(0 6px 18px rgba(0,0,0,0.50))",
-            }}
-          >
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            {/* Soft golden glow disc behind the trophy */}
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "130%",
+                height: "130%",
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(ellipse 65% 78% at 50% 54%," +
+                  "rgba(251,191,36,0.42) 0%," +
+                  "rgba(251,191,36,0.16) 46%," +
+                  "transparent 72%)",
+                filter: "blur(10px)",
+                pointerEvents: "none",
+              }}
+            />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/wc-trophy.png"
+              src="/images/world-cup-trophy.png"
               alt=""
               aria-hidden
               style={{
-                height: isMobile ? "80px" : "160px",
+                height: isMobile ? "110px" : "205px",
                 width: "auto",
                 display: "block",
+                position: "relative",
+                filter:
+                  "drop-shadow(0 0 22px rgba(251,191,36,0.55))" +
+                  " drop-shadow(0 6px 18px rgba(0,0,0,0.60))",
               }}
             />
           </div>
