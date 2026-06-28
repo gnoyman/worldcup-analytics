@@ -1,4 +1,4 @@
-import { GroupStanding, KnockoutMatch, KnockoutTeam, KnockoutStage, Match } from "@/types";
+import { GroupStanding, KnockoutMatch, KnockoutTeam, KnockoutStage, Match, Team } from "@/types";
 import { getTopEightThirdPlaceTeams } from "@/engine/standings/standings";
 
 // ─── WC 2026 Real Bracket ──────────────────────────────────────────────────────
@@ -79,13 +79,13 @@ export function resolveBracketSlotLabel(
   const m1 = /^1([A-L])$/.exec(slot);
   if (m1) {
     const s = byGroup[m1[1]]?.[1];
-    return (s && s.played > 0) ? s.team.name : slotLabelHebrew(slot);
+    return (s && s.played === 3) ? s.team.name : slotLabelHebrew(slot);
   }
 
   const m2 = /^2([A-L])$/.exec(slot);
   if (m2) {
     const s = byGroup[m2[1]]?.[2];
-    return (s && s.played > 0) ? s.team.name : slotLabelHebrew(slot);
+    return (s && s.played === 3) ? s.team.name : slotLabelHebrew(slot);
   }
 
   if (slot.startsWith("3")) {
@@ -135,34 +135,24 @@ function makeMatch(
 function slotToKT(
   slot: string,
   byGroup: Record<string, Record<number, GroupStanding>>,
-  top8Third: GroupStanding[],
   seeding: number
 ): KnockoutTeam | undefined {
   const m1 = /^1([A-L])$/.exec(slot);
   if (m1) {
     const s = byGroup[m1[1]]?.[1];
-    if (!s || s.played === 0) return undefined;
+    if (!s || s.played < 3) return undefined;
     return toKT(s, "1st", seeding);
   }
 
   const m2 = /^2([A-L])$/.exec(slot);
   if (m2) {
     const s = byGroup[m2[1]]?.[2];
-    if (!s || s.played === 0) return undefined;
+    if (!s || s.played < 3) return undefined;
     return toKT(s, "2nd", seeding);
   }
 
-  if (slot.startsWith("3")) {
-    const groups = slot.slice(1).split("/");
-    // Only show a 3rd-place team when at least one qualifying group has played
-    const qualifier = top8Third.find(
-      (s) => groups.includes(s.groupId) && s.played > 0
-    );
-    if (!qualifier) return undefined;
-    const rank = top8Third.indexOf(qualifier);
-    return toKT(qualifier, "3rd", rank + 1);
-  }
-
+  // 3rd-place slots are populated by seedTeamsFromKOFixtures() from official
+  // KO fixture data — never calculated from standings here.
   return undefined;
 }
 
@@ -187,9 +177,7 @@ export function buildWC2026KnockoutBracket(standings: GroupStanding[]): Knockout
     byGroup[s.groupId][s.position] = s;
   }
 
-  const top8Third = getTopEightThirdPlaceTeams(standings);
-
-  const kt = (slot: string, seeding: number) => slotToKT(slot, byGroup, top8Third, seeding);
+  const kt = (slot: string, seeding: number) => slotToKT(slot, byGroup, seeding);
 
   const matches: KnockoutMatch[] = [];
 
@@ -213,8 +201,8 @@ export function buildWC2026KnockoutBracket(standings: GroupStanding[]): Knockout
   matches.push(makeMatch("r32_16", "Round of 32", kt("2D",31),             kt("2G",32),             "2D",             "2G",             "r16_7","away"));
 
   // ── Round of 16 ────────────────────────────────────────────────────────────
-  // r16_1 (OF#89): W74 vs W77  → qf_1 home
-  // r16_2 (OF#90): W73 vs W75  → qf_1 away
+  // r16_1 (OF#90): W74 vs W77  → qf_1 home
+  // r16_2 (OF#89): W73 vs W75  → qf_1 away
   // r16_3 (OF#91): W76 vs W78  → qf_3 home
   // r16_4 (OF#92): W79 vs W80  → qf_3 away
   // r16_5 (OF#93): W83 vs W84  → qf_2 home
@@ -248,6 +236,72 @@ export function buildWC2026KnockoutBracket(standings: GroupStanding[]): Knockout
   matches.push(makeMatch("final", "Final", undefined, undefined));
 
   return matches;
+}
+
+/**
+ * Seed missing KnockoutTeam slots in the R32 bracket from official KO fixtures
+ * where the data provider has published real team IDs (not "tbd").
+ *
+ * Call after buildWC2026KnockoutBracket() and before applyKnockoutResults().
+ * It fills the unknown team in each R32 slot that already has one known team
+ * (1st/2nd place) but is missing the other (the 3rd-place qualifier), using
+ * the team ID pair from the provider's scheduled fixture.
+ *
+ * No-op when koFixtures is empty or all fixtures still show "tbd" team IDs.
+ */
+export function seedTeamsFromKOFixtures(
+  bracket: KnockoutMatch[],
+  koFixtures: Match[],
+  teamsById: Map<string, Team>
+): KnockoutMatch[] {
+  const confirmed = koFixtures.filter(
+    (f) => f.groupId === "KO" && f.homeTeamId !== "tbd" && f.awayTeamId !== "tbd"
+  );
+  if (confirmed.length === 0) return bracket;
+
+  let current = bracket;
+
+  for (const fixture of confirmed) {
+    // Find a bracket slot that already has exactly ONE team matching this fixture.
+    // Slots where both teams are undefined are R16+ waiting for winner propagation — skip.
+    const slot = current.find((b) => {
+      const hMatch =
+        b.homeTeam?.teamId === fixture.homeTeamId ||
+        b.homeTeam?.teamId === fixture.awayTeamId;
+      const aMatch =
+        b.awayTeam?.teamId === fixture.homeTeamId ||
+        b.awayTeam?.teamId === fixture.awayTeamId;
+      return (hMatch && !b.awayTeam) || (aMatch && !b.homeTeam);
+    });
+    if (!slot) continue;
+
+    const fdoHome = teamsById.get(fixture.homeTeamId);
+    const fdoAway = teamsById.get(fixture.awayTeamId);
+    if (!fdoHome || !fdoAway) continue;
+
+    let newHome = slot.homeTeam;
+    let newAway = slot.awayTeam;
+
+    if (!slot.homeTeam) {
+      // Away is known — determine which FDO team fills the home side
+      const isSwapped = slot.awayTeam!.teamId === fixture.homeTeamId;
+      const missingId   = isSwapped ? fixture.awayTeamId : fixture.homeTeamId;
+      const missingTeam = isSwapped ? fdoAway           : fdoHome;
+      newHome = { teamId: missingId, team: missingTeam, fromGroup: "", position: "3rd", seeding: 0 };
+    } else {
+      // Home is known — determine which FDO team fills the away side
+      const isSwapped = slot.homeTeam!.teamId === fixture.awayTeamId;
+      const missingId   = isSwapped ? fixture.homeTeamId : fixture.awayTeamId;
+      const missingTeam = isSwapped ? fdoHome            : fdoAway;
+      newAway = { teamId: missingId, team: missingTeam, fromGroup: "", position: "3rd", seeding: 0 };
+    }
+
+    current = current.map((b) =>
+      b.id === slot.id ? { ...b, homeTeam: newHome, awayTeam: newAway } : b
+    );
+  }
+
+  return current;
 }
 
 /**

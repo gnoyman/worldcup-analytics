@@ -12,7 +12,7 @@ import {
   getQualifiedTeams,
   getTopEightThirdPlaceTeams,
 } from "@/engine/standings/standings";
-import { buildWC2026KnockoutBracket, applyKnockoutResults } from "@/engine/knockout/knockout";
+import { buildWC2026KnockoutBracket, applyKnockoutResults, seedTeamsFromKOFixtures } from "@/engine/knockout/knockout";
 import { runMonteCarlo, DEFAULT_ITERATIONS } from "@/engine/monteCarlo/monteCarlo";
 import { GROUPS, MOCK_MATCHES } from "@/data/mockData";
 
@@ -53,21 +53,33 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function buildTournamentState(matches: Match[], groups: Group[]): TournamentState {
+function buildTournamentState(
+  matches: Match[],
+  groups: Group[],
+  teamsById?: Map<string, Team>
+): TournamentState {
   const standings       = calculateAllGroupStandings(groups, matches);
   const qualified       = getQualifiedTeams(standings);
   const thirdPlaceTeams = getTopEightThirdPlaceTeams(standings);
   const knockoutMatches = buildWC2026KnockoutBracket(standings);
 
-  // Inject official knockout results from the provider into the bracket tree.
-  // No-op during the group stage (koFixtures is empty).
-  // Once knockout matches are played, applyKnockoutResults() applies scores and
-  // advances winners into the correct downstream slots via advanceWinner().
   const koFixtures = matches.filter((m) => m.groupId === "KO");
+
+  // Fall back to groups-only team map when none supplied (mock / OF mode)
+  const localTeams: Map<string, Team> = teamsById ?? (() => {
+    const m = new Map<string, Team>();
+    groups.forEach(g => g.teams.forEach(t => m.set(t.id, t)));
+    return m;
+  })();
+
+  // Populate R32 slots from official KO fixture team IDs before result injection.
+  // No-op during group stage (koFixtures empty or all "tbd").
+  const seeded = seedTeamsFromKOFixtures(knockoutMatches, koFixtures, localTeams);
+
   const finalBracket =
     koFixtures.length > 0
-      ? applyKnockoutResults(knockoutMatches, koFixtures)
-      : knockoutMatches;
+      ? applyKnockoutResults(seeded, koFixtures)
+      : seeded;
 
   return {
     groups,
@@ -149,7 +161,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             fixtures.every(f => !f.homeTeamId.startsWith("apif_"));
 
           if (hasInternalIds) {
-            setTournament(buildTournamentState(fixtures, groups));
+            // Build team map including standings teams (covers FDO team IDs in KO fixtures)
+            const localTeams = new Map<string, Team>();
+            groups.forEach(g => g.teams.forEach(t => localTeams.set(t.id, t)));
+            if (standingsJson.ok && Array.isArray(standingsJson.data)) {
+              (standingsJson.data as GroupStanding[]).forEach(s => {
+                if (!localTeams.has(s.teamId)) localTeams.set(s.teamId, s.team);
+              });
+            }
+            setTournament(buildTournamentState(fixtures, groups, localTeams));
           }
 
           const today = todayStr();
@@ -221,7 +241,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         if (fixtures.length > 0) {
           const hasInternalIds = fixtures.every(f => !f.homeTeamId.startsWith("apif_"));
-          if (hasInternalIds) setTournament(buildTournamentState(fixtures, groups));
+          if (hasInternalIds) {
+            const localTeams = new Map<string, Team>();
+            groups.forEach(g => g.teams.forEach(t => localTeams.set(t.id, t)));
+            standings.forEach((s: GroupStanding) => {
+              if (!localTeams.has(s.teamId)) localTeams.set(s.teamId, s.team);
+            });
+            setTournament(buildTournamentState(fixtures, groups, localTeams));
+          }
         }
 
         if (standings.length > 0) setApiStandings(standings);
