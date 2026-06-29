@@ -10,20 +10,31 @@ const CARD_W = 148;
 const CONN_W = 22;
 const UNIT   = 62;
 
-// ── Bracket column IDs ────────────────────────────────────────────────────────
+// ── Derive bracket columns from the routing graph ─────────────────────────────
 
-const LEFT_HALF = {
-  r32: ["r32_1","r32_2","r32_3","r32_4","r32_5","r32_6","r32_7","r32_8"],
-  r16: ["r16_1","r16_2","r16_3","r16_4"],
-  qf:  ["qf_1","qf_2"],
-  sf:  ["sf_1"],
-};
-const RIGHT_HALF = {
-  r32: ["r32_9","r32_10","r32_11","r32_12","r32_13","r32_14","r32_15","r32_16"],
-  r16: ["r16_5","r16_6","r16_7","r16_8"],
-  qf:  ["qf_3","qf_4"],
-  sf:  ["sf_2"],
-};
+// Builds the ordered column arrays for one bracket half by walking the
+// nextMatchId/nextSlot links backward from the semi-final to R32.
+// home-slot children always come before away-slot children so that consecutive
+// pairs in each column correctly connect to the same parent in the next column.
+function deriveHalfColumns(all: KnockoutMatch[], sfId: string | undefined) {
+  type Slot = { home?: string; away?: string };
+  const children = new Map<string, Slot>();
+  for (const m of all) {
+    if (m.nextMatchId) {
+      const entry: Slot = children.get(m.nextMatchId) ?? {};
+      entry[m.nextSlot!] = m.id;
+      children.set(m.nextMatchId, entry);
+    }
+  }
+  const ordered = (id: string | undefined): string[] => {
+    const c = children.get(id ?? "") ?? {};
+    return [c.home, c.away].filter((x): x is string => !!x);
+  };
+  const qf  = ordered(sfId);
+  const r16 = qf.flatMap(ordered);
+  const r32 = r16.flatMap(ordered);
+  return { r32, r16, qf, sf: sfId ? [sfId] : [] as string[] };
+}
 
 // ── SVG connector ─────────────────────────────────────────────────────────────
 
@@ -173,14 +184,15 @@ function Column({
 type ColDef = { ids: string[]; slotH: number };
 
 function Half({
-  side,
+  sfId,
+  flip,
   all,
 }: {
-  side: "left" | "right";
+  sfId: string | undefined;
+  flip: boolean;
   all: KnockoutMatch[];
 }) {
-  const h    = side === "left" ? LEFT_HALF : RIGHT_HALF;
-  const flip = side === "right";
+  const h = deriveHalfColumns(all, sfId);
 
   const cols: ColDef[] = flip
     ? [
@@ -270,6 +282,8 @@ export function RoadToFinal() {
   const all = tournament.knockoutBracket.matches;
 
   const finalMatch = all.find((m) => m.stage === "Final");
+  const leftSf     = all.find((m) => m.nextMatchId === finalMatch?.id && m.nextSlot === "home");
+  const rightSf    = all.find((m) => m.nextMatchId === finalMatch?.id && m.nextSlot === "away");
   const totalW     = 2 * (4 * CARD_W + 3 * CONN_W) + CARD_W;
 
   const leftHeaders  = ["שלב 32", "שמינית גמר", "רביע גמר", "חצי גמר"];
@@ -294,7 +308,7 @@ export function RoadToFinal() {
             {/* Left half */}
             <div className="shrink-0">
               <HeaderRow labels={leftHeaders} />
-              <Half side="left" all={all} />
+              <Half sfId={leftSf?.id} flip={false} all={all} />
             </div>
 
             {/* Final */}
@@ -318,7 +332,7 @@ export function RoadToFinal() {
             {/* Right half */}
             <div className="shrink-0">
               <HeaderRow labels={rightHeaders} />
-              <Half side="right" all={all} />
+              <Half sfId={rightSf?.id} flip={true} all={all} />
             </div>
           </div>
         </div>
