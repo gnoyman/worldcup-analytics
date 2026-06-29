@@ -56,9 +56,12 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 function buildTournamentState(
   matches: Match[],
   groups: Group[],
-  teamsById?: Map<string, Team>
+  teamsById?: Map<string, Team>,
+  precomputedStandings?: GroupStanding[]
 ): TournamentState {
-  const standings       = calculateAllGroupStandings(groups, matches);
+  // In live mode (FDO), use API standings directly — mock GROUPS have wrong compositions.
+  // In mock/scenario mode, recalculate from groups + matches as usual.
+  const standings = precomputedStandings ?? calculateAllGroupStandings(groups, matches);
   const qualified       = getQualifiedTeams(standings);
   const thirdPlaceTeams = getTopEightThirdPlaceTeams(standings);
   const knockoutMatches = buildWC2026KnockoutBracket(standings);
@@ -164,12 +167,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             // Build team map including standings teams (covers FDO team IDs in KO fixtures)
             const localTeams = new Map<string, Team>();
             groups.forEach(g => g.teams.forEach(t => localTeams.set(t.id, t)));
-            if (standingsJson.ok && Array.isArray(standingsJson.data)) {
-              (standingsJson.data as GroupStanding[]).forEach(s => {
-                if (!localTeams.has(s.teamId)) localTeams.set(s.teamId, s.team);
-              });
-            }
-            setTournament(buildTournamentState(fixtures, groups, localTeams));
+            const apiStngs = (standingsJson.ok && Array.isArray(standingsJson.data) && standingsJson.data.length > 0)
+              ? standingsJson.data as GroupStanding[]
+              : undefined;
+            apiStngs?.forEach(s => { if (!localTeams.has(s.teamId)) localTeams.set(s.teamId, s.team); });
+            setTournament(buildTournamentState(fixtures, groups, localTeams, apiStngs));
           }
 
           const today = todayStr();
@@ -244,10 +246,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (hasInternalIds) {
             const localTeams = new Map<string, Team>();
             groups.forEach(g => g.teams.forEach(t => localTeams.set(t.id, t)));
-            standings.forEach((s: GroupStanding) => {
-              if (!localTeams.has(s.teamId)) localTeams.set(s.teamId, s.team);
-            });
-            setTournament(buildTournamentState(fixtures, groups, localTeams));
+            const syncStngs = standings.length > 0 ? standings : undefined;
+            syncStngs?.forEach((s: GroupStanding) => { if (!localTeams.has(s.teamId)) localTeams.set(s.teamId, s.team); });
+            setTournament(buildTournamentState(fixtures, groups, localTeams, syncStngs));
           }
         }
 
